@@ -1,0 +1,12 @@
+# Keyed by gfx target. These are the precisions the hardware can run.
+# MI300X has no native FP4, so mxfp4 is only listed for gfx950.
+# FP8 on gfx942 is expected to be the FNUZ variant. Confirm on the pinned stack.
+gfx942:
+  name: AMD Instinct MI300X
+  hbm_gb: 192
+  precisions: [bf16, fp8, awq_int4, gptq_int4, gguf]
+
+gfx950:
+  name: AMD Instinct MI350 series (MI350X, MI355X)
+  hbm_gb: 288
+  precisions: [bf16, fp8, awq_int4, gptq_int4, gguf, mxfp4]
