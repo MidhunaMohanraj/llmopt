@@ -6,11 +6,9 @@ import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeVar
 
 from typing_extensions import Self
 
-_MonitorT = TypeVar("_MonitorT", bound="PeakMemoryMonitor")
 
 
 def _children_map() -> dict[int, list[int]]:
