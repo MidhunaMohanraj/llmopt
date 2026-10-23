@@ -6,6 +6,9 @@ import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
+
+_MonitorT = TypeVar("_MonitorT", bound="PeakMemoryMonitor")
 
 
 def _children_map() -> dict[int, list[int]]:
@@ -69,7 +72,7 @@ class PeakMemoryMonitor:
         while not self._stop.wait(self._interval_s):
             self.peak_bytes = max(self.peak_bytes, self._read_bytes())
 
-    def __enter__(self) -> PeakMemoryMonitor:
+    def __enter__(self: _MonitorT) -> _MonitorT:
         self.peak_bytes = self._read_bytes()
         self._stop.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
