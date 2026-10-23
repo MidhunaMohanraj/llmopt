@@ -8,6 +8,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
 
+from typing_extensions import Self
+
 _MonitorT = TypeVar("_MonitorT", bound="PeakMemoryMonitor")
 
 
@@ -72,7 +74,7 @@ class PeakMemoryMonitor:
         while not self._stop.wait(self._interval_s):
             self.peak_bytes = max(self.peak_bytes, self._read_bytes())
 
-    def __enter__(self: _MonitorT) -> _MonitorT:
+    def __enter__(self) -> Self:
         self.peak_bytes = self._read_bytes()
         self._stop.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
