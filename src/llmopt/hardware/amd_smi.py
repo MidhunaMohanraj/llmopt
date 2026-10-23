@@ -1,5 +1,3 @@
-"""Parse the text printed by `amd-smi static` and by plain `amd-smi`."""
-
 from __future__ import annotations
 
 import re
@@ -19,7 +17,6 @@ _PARTITION_ROW = re.compile(
 
 
 class AmdSmiGpu(BaseModel):
-    """Static facts about one GPU from `amd-smi static`."""
 
     gpu_index: int = Field(ge=0)
     market_name: str
@@ -30,7 +27,6 @@ class AmdSmiGpu(BaseModel):
 
 
 class GpuPartition(BaseModel):
-    """Compute and memory partition mode of one GPU (for example SPX and NPS1)."""
 
     gpu_index: int = Field(ge=0)
     compute_mode: str
@@ -38,7 +34,6 @@ class GpuPartition(BaseModel):
 
 
 class AmdSmiSummary(BaseModel):
-    """Versions and partition modes from the default `amd-smi` view."""
 
     amd_smi_version: str
     amdgpu_version: str
@@ -47,7 +42,6 @@ class AmdSmiSummary(BaseModel):
 
 
 def _collect_gpu_blocks(text: str) -> dict[int, dict[tuple[str, str], str]]:
-    """Map GPU index to {(section, key): value} for the fields at the usual depth."""
     blocks: dict[int, dict[tuple[str, str], str]] = {}
     current: dict[tuple[str, str], str] | None = None
     section = ""
@@ -82,7 +76,7 @@ def _need(fields: dict[tuple[str, str], str], section: str, key: str, gpu: int) 
 
 
 def parse_amd_smi_static(text: str) -> list[AmdSmiGpu]:
-    """Parse `amd-smi static` output into one record per GPU."""
+
     blocks = _collect_gpu_blocks(text)
     if not blocks:
         raise ValueError("amd-smi static output has no 'GPU: N' sections")
@@ -113,7 +107,7 @@ def _find(pattern: re.Pattern[str], text: str, name: str) -> str:
 
 
 def parse_amd_smi_default(text: str) -> AmdSmiSummary:
-    """Parse the default `amd-smi` view: version header and partition modes."""
+   
     partitions = [
         GpuPartition(
             gpu_index=int(row.group(1)),
