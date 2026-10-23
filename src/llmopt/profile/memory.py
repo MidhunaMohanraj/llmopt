@@ -10,7 +10,6 @@ from pathlib import Path
 from typing_extensions import Self
 
 
-
 def _children_map() -> dict[int, list[int]]:
     children: dict[int, list[int]] = {}
     for entry in Path("/proc").iterdir():
