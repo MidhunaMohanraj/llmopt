@@ -4,11 +4,13 @@ from typing import Annotated
 import typer
 
 from llmopt.hardware.host import detect_host
+from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
 from llmopt.profile.factory import make_config, make_engine, parse_settings
 from llmopt.report.render import write_report
 from llmopt.report.store import load_report, load_trials, save_trial
 from llmopt.schemas import Status, TrialResult, Workload
+from llmopt.tune.plan import build_plan, format_plan
 
 app = typer.Typer(help="llmopt: find the best way to serve an LLM on an AMD GPU.")
 
@@ -110,6 +112,19 @@ def bench_cmd(
     typer.echo(f"Saved to {path}")
     if trial.status is Status.FAILED:
         raise typer.Exit(code=1)
+
+
+@app.command("plan")
+def plan_cmd(
+    gfx: Annotated[str, typer.Option("--gfx", help="GPU target, e.g. gfx942.")],
+) -> None:
+    """List the engine and precision pairs allowed on a GPU target."""
+    try:
+        pairs = candidate_pairs(gfx)
+    except ValueError as error:
+        typer.echo(f"error: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(format_plan(gfx, build_plan(pairs)))
 
 
 if __name__ == "__main__":
