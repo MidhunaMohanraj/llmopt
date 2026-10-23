@@ -8,12 +8,11 @@ from typing import Any
 from llmopt.engines.base import EngineAdapter, GenRequest, GenResult, SupportResult
 from llmopt.schemas import Config, Engine, HardwareProfile, Precision
 
-
 FILLER_TEXT = "The quick brown fox jumps over the lazy dog. "
 
 
 def build_prompt_ids(tokenizer: Any, prompt_tokens: int) -> list[int]:
-   
+
     ids: list[int] = tokenizer.encode(FILLER_TEXT, add_special_tokens=False)
     if not ids:
         raise ValueError("tokenizer produced no tokens for the filler text")
