@@ -1,5 +1,3 @@
-"""PyTorch engine adapter that runs on CPU. This is the Phase 1 baseline."""
-
 from __future__ import annotations
 
 import gc
@@ -10,12 +8,12 @@ from typing import Any
 from llmopt.engines.base import EngineAdapter, GenRequest, GenResult, SupportResult
 from llmopt.schemas import Config, Engine, HardwareProfile, Precision
 
-# Repeated and cut to the exact prompt length, so every run uses the same prompt.
+
 FILLER_TEXT = "The quick brown fox jumps over the lazy dog. "
 
 
 def build_prompt_ids(tokenizer: Any, prompt_tokens: int) -> list[int]:
-    """Token ids of exactly prompt_tokens tokens, made by repeating FILLER_TEXT."""
+   
     ids: list[int] = tokenizer.encode(FILLER_TEXT, add_special_tokens=False)
     if not ids:
         raise ValueError("tokenizer produced no tokens for the filler text")
