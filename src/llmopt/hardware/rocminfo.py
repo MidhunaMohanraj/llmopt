@@ -1,5 +1,3 @@
-"""Parse the text printed by rocminfo into GPU records."""
-
 from __future__ import annotations
 
 import re
@@ -11,7 +9,6 @@ _TOP_LEVEL_FIELD = re.compile(r"^  ([^\s:][^:]*):\s*(.*)$")
 
 
 class GpuAgent(BaseModel):
-    """One GPU as listed by rocminfo."""
 
     agent_index: int = Field(gt=0)
     marketing_name: str
@@ -37,7 +34,7 @@ def _need(fields: dict[str, str], key: str, agent: int) -> str:
 
 
 def parse_rocminfo(text: str) -> list[GpuAgent]:
-    """Return the GPU agents in rocminfo output (an empty list if there is no GPU)."""
+  
     headers = list(_AGENT_HEADER.finditer(text))
     if not headers:
         raise ValueError("rocminfo output has no 'Agent N' sections")
