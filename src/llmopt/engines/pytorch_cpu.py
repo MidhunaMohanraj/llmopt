@@ -7,9 +7,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
 from llmopt.engines.base import EngineAdapter, GenRequest, GenResult, SupportResult
 from llmopt.schemas import Config, Engine, HardwareProfile, Precision
 
@@ -49,6 +46,9 @@ class PyTorchCpuEngine(EngineAdapter):
             raise ValueError(f"pytorch cpu adapter supports bf16 only, got {config.precision.value}")
         if config.kv_cache_dtype != "auto":
             raise ValueError(f"kv_cache_dtype must be 'auto', got {config.kv_cache_dtype!r}")
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
         threads = config.settings.get("num_threads")
         if threads is not None:
             if isinstance(threads, bool) or not isinstance(threads, int):
@@ -72,6 +72,8 @@ class PyTorchCpuEngine(EngineAdapter):
     def _generate_one(self, req: GenRequest) -> GenResult:
         """Greedy decoding, one request at a time. EOS is ignored so every run makes
         exactly max_new_tokens tokens and timings stay comparable."""
+        import torch
+
         ids = build_prompt_ids(self._tokenizer, req.prompt_tokens)
         input_ids = torch.tensor([ids], dtype=torch.long)
         new_ids: list[int] = []
