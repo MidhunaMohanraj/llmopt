@@ -4,8 +4,11 @@ from typing import Annotated
 import typer
 
 from llmopt.hardware.host import detect_host
+from llmopt.profile.bench import run_bench
+from llmopt.profile.factory import make_config, make_engine, parse_settings
 from llmopt.report.render import write_report
-from llmopt.report.store import load_report, load_trials
+from llmopt.report.store import load_report, load_trials, save_trial
+from llmopt.schemas import Status, TrialResult, Workload
 
 app = typer.Typer(help="llmopt: find the best way to serve an LLM on an AMD GPU.")
 
@@ -57,6 +60,56 @@ def report_cmd(
     full = base.model_copy(update={"trials": trials})
     write_report(full, output, notice or None)
     typer.echo(f"Wrote {output} with {len(trials)} trial(s)")
+
+
+def _trial_summary(trial: TrialResult) -> str:
+    text = f"status: {trial.status.value}"
+    if trial.reason:
+        text += f" ({trial.reason})"
+    metrics = trial.metrics
+    if metrics is not None:
+        text += (
+            f"\nTTFT p50 {metrics.ttft_ms_p50:.1f} ms, TPOT {metrics.tpot_ms:.1f} ms, "
+            f"throughput {metrics.throughput_tps:.1f} tok/s, "
+            f"peak memory {metrics.peak_memory_gb:.2f} GiB, "
+            f"spread {metrics.run_spread_pct:.1f}%"
+        )
+    return text
+
+
+@app.command("bench")
+def bench_cmd(
+    engine: Annotated[str, typer.Option("--engine", help="pytorch or vllm.")],
+    model: Annotated[Path, typer.Option("--model", help="Model folder.")],
+    results: Annotated[
+        Path, typer.Option("--results", help="Folder to save the trial JSON in.")
+    ] = Path("results"),
+    settings: Annotated[
+        str, typer.Option("--settings", help="Engine settings, like a=1,b=true.")
+    ] = "",
+    prompt_tokens: Annotated[int, typer.Option("--prompt-tokens")] = 32,
+    output_tokens: Annotated[int, typer.Option("--output-tokens")] = 16,
+    num_requests: Annotated[int, typer.Option("--num-requests")] = 8,
+    runs: Annotated[int, typer.Option("--runs")] = 3,
+) -> None:
+    """Run one config through the profiler and save the trial."""
+    try:
+        config = make_config(engine, model, parse_settings(settings))
+        workload = Workload(
+            name="bench",
+            prompt_tokens=prompt_tokens,
+            output_tokens=output_tokens,
+            num_requests=num_requests,
+        )
+        trial = run_bench(make_engine(engine), config, workload, runs=runs)
+    except ValueError as error:
+        typer.echo(f"error: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    path = save_trial(trial, results)
+    typer.echo(_trial_summary(trial))
+    typer.echo(f"Saved to {path}")
+    if trial.status is Status.FAILED:
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
