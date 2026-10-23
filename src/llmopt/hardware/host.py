@@ -1,4 +1,3 @@
-"""Detect the machine llmopt runs on (CPU, memory, OS)."""
 
 from __future__ import annotations
 
@@ -12,7 +11,7 @@ from pydantic import BaseModel, Field
 
 
 class HostProfile(BaseModel):
-    """What the host machine looks like. GPU details are handled separately."""
+
 
     cpu_model: str
     cpu_cores: int = Field(gt=0)
@@ -64,7 +63,7 @@ def build_host_profile(
     kernel: str,
     environment: str = "native",
 ) -> HostProfile:
-    """Build a profile from raw command output (so tests can use recorded text)."""
+    
     lscpu = _parse_colon_lines(lscpu_text)
     sockets = int(_require(lscpu, "Socket(s)"))
     flags = set(lscpu.get("Flags", "").split())
@@ -84,7 +83,7 @@ def build_host_profile(
 
 
 def detect_host() -> HostProfile:
-    """Read this machine's real CPU, memory and OS information."""
+
     lscpu = subprocess.run(
         ["lscpu"],
         capture_output=True,
