@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -8,9 +8,16 @@ from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
 from llmopt.profile.factory import make_config, make_engine, parse_settings
 from llmopt.report.render import write_report
-from llmopt.report.store import load_report, load_trials, save_trial
-from llmopt.schemas import Status, TrialResult, Workload
+from llmopt.report.store import load_report, load_trial, load_trials, save_trial
+from llmopt.schemas import AccuracyResult, Status, TrialResult, Workload
 from llmopt.tune.plan import build_plan, format_plan
+from llmopt.validate.baseline import (
+    Baseline,
+    attach_accuracy,
+    check_baseline,
+    read_baseline,
+    write_baseline,
+)
 
 app = typer.Typer(help="llmopt: find the best way to serve an LLM on an AMD GPU.")
 
@@ -125,6 +132,110 @@ def plan_cmd(
         typer.echo(f"error: {error}", err=True)
         raise typer.Exit(code=1) from error
     typer.echo(format_plan(gfx, build_plan(pairs)))
+
+
+TASKS = {"ppl": "wikitext2_perplexity", "arc": "arc_easy_local"}
+
+
+def _score(task: str, model: Path, datasets: Path, limit: int | None) -> float:
+    """Run the real scorer. Needs torch and transformers (ppl) or lm_eval (arc)."""
+    if task == "arc":
+        from llmopt.validate.lmeval import run_arc_easy
+
+        return run_arc_easy(model, datasets, limit=limit)
+
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from llmopt.validate.perplexity import evaluate_perplexity, load_wikitext_texts
+
+    texts = load_wikitext_texts(
+        datasets / "wikitext" / "wikitext-2-raw-v1" / "test-00000-of-00001.parquet"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(str(model))
+    network: Any = AutoModelForCausalLM.from_pretrained(
+        str(model), torch_dtype=torch.bfloat16
+    )
+    network.eval()
+    result = evaluate_perplexity(network, tokenizer, texts, max_windows=limit or 20)
+    return result.perplexity
+
+
+def _compare(task_name: str, score: float, baseline_score: float) -> AccuracyResult:
+    if task_name == TASKS["ppl"]:
+        from llmopt.validate.perplexity import perplexity_accuracy
+
+        return perplexity_accuracy(score, baseline_score)
+    from llmopt.validate.lmeval import accuracy_result
+
+    return accuracy_result(score, baseline_score)
+
+
+@app.command("validate")
+def validate_cmd(
+    model: Annotated[Path, typer.Option("--model", help="Model folder.")],
+    task: Annotated[str, typer.Option("--task", help="ppl or arc.")],
+    baseline: Annotated[
+        Path | None, typer.Option("--baseline", help="Baseline file to compare with.")
+    ] = None,
+    write_baseline_to: Annotated[
+        Path | None,
+        typer.Option("--write-baseline", help="Score the model and save a baseline."),
+    ] = None,
+    limit: Annotated[
+        int | None,
+        typer.Option("--limit", help="Smoke tests only: windows or questions."),
+    ] = None,
+    datasets: Annotated[Path, typer.Option("--datasets")] = Path("~/datasets"),
+    trial: Annotated[
+        Path | None, typer.Option("--trial", help="Trial JSON to attach the result to.")
+    ] = None,
+) -> None:
+    """Score a model and compare it with a baseline, or save a new baseline."""
+    saved: Baseline | None = None
+    trial_data: TrialResult | None = None
+    try:
+        if task not in TASKS:
+            raise ValueError(f"unknown task {task!r}; use ppl or arc")
+        if (baseline is None) == (write_baseline_to is None):
+            raise ValueError("give exactly one of --baseline or --write-baseline")
+        if write_baseline_to is not None and limit is not None:
+            raise ValueError("a limited score is not a real baseline; drop --limit")
+        task_name = TASKS[task]
+        if baseline is not None:
+            saved = read_baseline(baseline)
+            check_baseline(saved, task_name, limit)
+        if trial is not None:
+            trial_data = load_trial(trial)
+        if limit is not None:
+            typer.echo(
+                f"WARNING: --limit {limit} used. This is a smoke run, not a real score.",
+                err=True,
+            )
+        score = _score(task, model, datasets.expanduser(), limit)
+    except (ValueError, FileNotFoundError, RuntimeError) as error:
+        typer.echo(f"error: {error}", err=True)
+        raise typer.Exit(code=1) from error
+
+    typer.echo(f"{task_name}: score {score:.4f}")
+    if write_baseline_to is not None:
+        write_baseline(
+            Baseline(task=task_name, score=score, model=str(model), limit=limit),
+            write_baseline_to,
+        )
+        typer.echo(f"Baseline saved to {write_baseline_to}")
+        return
+    if saved is None:
+        return  # not reachable: the checks above need one of the two options
+    result = _compare(task_name, score, saved.score)
+    typer.echo(
+        f"baseline {result.baseline_score:.4f}, "
+        f"drop {result.drop_pct:+.2f}% (positive = worse)"
+    )
+    if trial is not None and trial_data is not None:
+        updated = attach_accuracy(trial_data, result)
+        trial.write_text(updated.model_dump_json(indent=2) + "\n")
+        typer.echo(f"Attached to {trial}")
 
 
 if __name__ == "__main__":
