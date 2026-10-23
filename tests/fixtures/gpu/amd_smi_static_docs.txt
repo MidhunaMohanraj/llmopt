@@ -1,0 +1,226 @@
+# Source: https://rocm.docs.amd.com/projects/amdsmi/en/latest/_sources/how-to/amdsmi-cli-tool.md (example from an MI300A system)
+~$ amd-smi static
+CPU: 0
+    SMU:
+        FW_VERSION: 85.103.0
+    INTERFACE_VERSION:
+        PROTO VERSION: 6
+...
+
+GPU: 0
+    ASIC:
+        MARKET_NAME: AMD Instinct MI300A
+        VENDOR_ID: 0x1002
+        VENDOR_NAME: Advanced Micro Devices, Inc. [AMD/ATI]
+        SUBVENDOR_ID: 0x1002
+        DEVICE_ID: 0x74a0
+        SUBSYSTEM_ID: 0x74a0
+        REV_ID: 0x00
+        CHIP_REV_ID: 0x01
+        EXTERNAL_REV_ID: 0x47
+        ASIC_SERIAL: 0xXXXXXXXXXXXXXXXX
+        OAM_ID: 0
+        PHYSICAL_ACC_ID: N/A
+        NUM_COMPUTE_UNITS: 228
+        TARGET_GRAPHICS_VERSION: gfx942
+        FLAGS: 17
+    BUS:
+        BDF: 0000:01:00.0
+        MAX_PCIE_WIDTH: 16
+        MAX_PCIE_SPEED: 32 GT/s
+        PCIE_LEVELS: N/A
+        PCIE_INTERFACE_VERSION: Gen 5
+        SLOT_TYPE: PCIE
+    IFWI:
+        NAME: N/A
+        BUILD_DATE: N/A
+        PART_NUMBER: N/A
+        VERSION: N/A
+    LIMIT:
+        PPT0:
+            MAX_POWER_LIMIT: 550 W
+            MIN_POWER_LIMIT: 0 W
+            SOCKET_POWER_LIMIT: 0 W
+        PPT1:
+            MAX_POWER_LIMIT: N/A
+            MIN_POWER_LIMIT: N/A
+            SOCKET_POWER_LIMIT: N/A
+        SLOWDOWN_EDGE_TEMPERATURE: N/A
+        SLOWDOWN_HOTSPOT_TEMPERATURE: 100 °C
+        SLOWDOWN_VRAM_TEMPERATURE: 105 °C
+        SHUTDOWN_EDGE_TEMPERATURE: N/A
+        SHUTDOWN_HOTSPOT_TEMPERATURE: 110 °C
+        SHUTDOWN_VRAM_TEMPERATURE: 115 °C
+        PTL_STATE: N/A
+        PTL_FORMAT: N/A
+    DRIVER:
+        NAME: amdgpu
+        VERSION: 6.19.4
+        OS_KERNEL_VERSION: 5.15.0-generic
+    BOARD:
+        MODEL_NUMBER: N/A
+        PRODUCT_SERIAL: N/A
+        FRU_ID: N/A
+        PRODUCT_NAME: Aqua Vanjaram [Instinct MI300A]
+        MANUFACTURER_NAME: Advanced Micro Devices, Inc. [AMD/ATI]
+    RAS:
+        EEPROM_VERSION: 0x30000
+        BAD_PAGE_THRESHOLD: N/A
+        BAD_PAGE_THRESHOLD_EXCEEDED: N/A
+        PARITY_SCHEMA: DISABLED
+        SINGLE_BIT_SCHEMA: DISABLED
+        DOUBLE_BIT_SCHEMA: DISABLED
+        POISON_SCHEMA: ENABLED
+        ECC_BLOCK_STATE:
+            UMC: DISABLED
+            SDMA: ENABLED
+            GFX: ENABLED
+            MMHUB: ENABLED
+            ATHUB: DISABLED
+            PCIE_BIF: DISABLED
+            HDP: DISABLED
+            XGMI_WAFL: DISABLED
+            DF: DISABLED
+            SMN: DISABLED
+            SEM: DISABLED
+            MP0: DISABLED
+            MP1: DISABLED
+            FUSE: DISABLED
+            MCA: DISABLED
+            VCN: DISABLED
+            JPEG: DISABLED
+            IH: DISABLED
+            MPIO: DISABLED
+    SOC_PSTATE: N/A
+    XGMI_PLPD: N/A
+    PROFILE: AMDSMI_STATUS_NOT_SUPPORTED - Feature not supported
+    PROCESS_ISOLATION: Disabled
+    NUMA:
+        NODE: 0
+        AFFINITY: 0
+        CPU_AFFINITY:
+            CPU_LIST_0:
+                BITMASK: 0000000000FFFFFF
+                CPU_CORES_AFFINITY: 0-23
+            CPU_LIST_1:
+                BITMASK: 00FFFFFF00000000
+                CPU_CORES_AFFINITY: 96-119
+            CPU_LIST_2:
+                BITMASK: 0000000000000000
+                CPU_CORES_AFFINITY: N/A
+        SOCKET_AFFINITY:
+            CPU_LIST_0:
+                BITMASK: 0000000000FFFFFF
+                CPU_CORES_AFFINITY: 0-23
+            CPU_LIST_1:
+                BITMASK: 00FFFFFF00000000
+                CPU_CORES_AFFINITY: 96-119
+            CPU_LIST_2:
+                BITMASK: 0000000000000000
+                CPU_CORES_AFFINITY: N/A
+    VRAM:
+        TYPE: HBM
+        VENDOR: UNKNOWN
+        SIZE: 96432 MB
+        BIT_WIDTH: 8192
+        MAX_BANDWIDTH: 5325 GB/s
+    CACHE_INFO:
+        CACHE_0:
+            CACHE_ACRONYM: L1D
+            CACHE_PROPERTIES: DATA_CACHE, SIMD_CACHE
+            CACHE_SIZE: 32 KB
+            CACHE_LEVEL: 1
+            MAX_NUM_CU_SHARED: 1
+            NUM_CACHE_INSTANCE: 228
+            TOTAL_CACHE_SIZE: 7296 KB
+        CACHE_1:
+            CACHE_ACRONYM: L1I
+            CACHE_PROPERTIES: INST_CACHE, SIMD_CACHE
+            CACHE_SIZE: 64 KB
+            CACHE_LEVEL: 1
+            MAX_NUM_CU_SHARED: 2
+            NUM_CACHE_INSTANCE: 108
+            TOTAL_CACHE_SIZE: 6912 KB
+        CACHE_2:
+            CACHE_ACRONYM: L1I
+            CACHE_PROPERTIES: INST_CACHE, SIMD_CACHE
+            CACHE_SIZE: 64 KB
+            CACHE_LEVEL: 1
+            MAX_NUM_CU_SHARED: 1
+            NUM_CACHE_INSTANCE: 12
+            TOTAL_CACHE_SIZE: 768 KB
+        CACHE_3:
+            CACHE_ACRONYM: L1D
+            CACHE_PROPERTIES: DATA_CACHE, SIMD_CACHE
+            CACHE_SIZE: 16 KB
+            CACHE_LEVEL: 1
+            MAX_NUM_CU_SHARED: 2
+            NUM_CACHE_INSTANCE: 108
+            TOTAL_CACHE_SIZE: 1728 KB
+        CACHE_4:
+            CACHE_ACRONYM: L1D
+            CACHE_PROPERTIES: DATA_CACHE, SIMD_CACHE
+            CACHE_SIZE: 16 KB
+            CACHE_LEVEL: 1
+            MAX_NUM_CU_SHARED: 1
+            NUM_CACHE_INSTANCE: 12
+            TOTAL_CACHE_SIZE: 192 KB
+        CACHE_5:
+            CACHE_ACRONYM: L2
+            CACHE_PROPERTIES: DATA_CACHE, SIMD_CACHE
+            CACHE_SIZE: 4096 KB
+            CACHE_LEVEL: 2
+            MAX_NUM_CU_SHARED: 228
+            NUM_CACHE_INSTANCE: 1
+            TOTAL_CACHE_SIZE: 4096 KB
+        CACHE_6:
+            CACHE_ACRONYM: L3
+            CACHE_PROPERTIES: DATA_CACHE, SIMD_CACHE
+            CACHE_SIZE: 262144 KB
+            CACHE_LEVEL: 3
+            MAX_NUM_CU_SHARED: 228
+            NUM_CACHE_INSTANCE: 1
+            TOTAL_CACHE_SIZE: 262144 KB
+    MEM_CARVEOUT: N/A (UMA carveout is not supported on this ASIC/VBIOS)
+    CLOCK:
+        SYS:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 44 MHz
+                LEVEL 1: 500 MHz
+                LEVEL 2: 2100 MHz
+        MEM:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 900 MHz
+                LEVEL 1: 1100 MHz
+                LEVEL 2: 1200 MHz
+                LEVEL 3: 1300 MHz
+        DF:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 1200 MHz
+                LEVEL 1: 1600 MHz
+                LEVEL 2: 1900 MHz
+                LEVEL 3: 2000 MHz
+        SOC:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 27 MHz
+                LEVEL 1: 800 MHz
+                LEVEL 2: 1000 MHz
+                LEVEL 3: 1143 MHz
+        DCEF: N/A
+        VCLK0:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 0 MHz
+                LEVEL 1: 914 MHz
+        VCLK1: N/A
+        DCLK0:
+            CURRENT_LEVEL: 0
+            FREQUENCY_LEVELS:
+                LEVEL 0: 7 MHz
+                LEVEL 1: 711 MHz
+        DCLK1: N/A
+...
