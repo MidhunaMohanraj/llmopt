@@ -1,5 +1,3 @@
-"""Read a Hugging Face config.json and estimate model memory."""
-
 from __future__ import annotations
 
 import json
@@ -14,7 +12,6 @@ BYTES_PER_VALUE: dict[str, int] = {"bf16": 2, "fp8": 1}
 
 
 class ModelConfig(BaseModel):
-    """The parts of a Hugging Face config.json that decide memory use."""
 
     model_type: str
     num_layers: int = Field(gt=0)
@@ -32,8 +29,7 @@ class ModelConfig(BaseModel):
 
 
 class ParameterCount(BaseModel):
-    """Parameters grouped by how they are stored when a model is quantized."""
-
+   
     linear: int
     embedding: int
     lm_head: int
@@ -63,7 +59,7 @@ def _need_bool(raw: dict[str, Any], key: str) -> bool:
 
 
 def parse_model_config(raw: dict[str, Any]) -> ModelConfig:
-    """Build a ModelConfig from the contents of a config.json."""
+  
     model_type = raw.get("model_type")
     if model_type not in SUPPORTED_MODEL_TYPES:
         supported = ", ".join(SUPPORTED_MODEL_TYPES)
@@ -89,7 +85,7 @@ def parse_model_config(raw: dict[str, Any]) -> ModelConfig:
 
 
 def load_model_config(path: Path) -> ModelConfig:
-    """Read a config.json (pass the file, or the model folder that contains it)."""
+   
     config_path = path / "config.json" if path.is_dir() else path
     if not config_path.is_file():
         raise FileNotFoundError(f"no config.json at {config_path}")
@@ -100,7 +96,7 @@ def load_model_config(path: Path) -> ModelConfig:
 
 
 def count_parameters(cfg: ModelConfig) -> ParameterCount:
-    """Count parameters of a Llama-style or Qwen3 decoder from its config."""
+ 
     q_out = cfg.num_attention_heads * cfg.head_dim
     kv_out = cfg.num_kv_heads * cfg.head_dim
     attention = cfg.hidden_size * (q_out + 2 * kv_out) + q_out * cfg.hidden_size
@@ -116,7 +112,7 @@ def count_parameters(cfg: ModelConfig) -> ParameterCount:
 
 
 def estimate_weight_bytes(counts: ParameterCount, weight_format: ValueFormat) -> int:
-    """Weight memory. FP8 stores the linear layers in 1 byte; the rest stays BF16."""
+  
     others = counts.embedding + counts.lm_head + counts.norm
     return counts.linear * BYTES_PER_VALUE[weight_format] + others * BYTES_PER_VALUE["bf16"]
 
@@ -129,7 +125,6 @@ def kv_cache_bytes(
     return per_token * tokens * batch
 
 class MemoryComparison(BaseModel):
-    """A memory estimate next to a measured peak."""
 
     estimated_bytes: int = Field(gt=0)
     measured_peak_bytes: int = Field(gt=0)
