@@ -127,3 +127,29 @@ def kv_cache_bytes(
     """KV-cache memory: keys and values for every layer, for tokens x batch."""
     per_token = 2 * cfg.num_layers * cfg.num_kv_heads * cfg.head_dim * BYTES_PER_VALUE[kv_format]
     return per_token * tokens * batch
+
+class MemoryComparison(BaseModel):
+    """A memory estimate next to a measured peak."""
+
+    estimated_bytes: int = Field(gt=0)
+    measured_peak_bytes: int = Field(gt=0)
+
+    @property
+    def gap_bytes(self) -> int:
+        return self.measured_peak_bytes - self.estimated_bytes
+
+    @property
+    def gap_pct(self) -> float:
+        return 100.0 * self.gap_bytes / self.estimated_bytes
+
+    @property
+    def estimate_is_lower_bound(self) -> bool:
+        """True when the measured peak is at least the estimate, as expected."""
+        return self.measured_peak_bytes >= self.estimated_bytes
+
+
+def compare_with_measured(estimated_bytes: int, measured_peak_bytes: int) -> MemoryComparison:
+    """Compare estimated weights + KV cache with a measured peak. Overheads sit in the gap."""
+    return MemoryComparison(
+        estimated_bytes=estimated_bytes, measured_peak_bytes=measured_peak_bytes
+    )
