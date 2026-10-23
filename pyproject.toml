@@ -23,6 +23,11 @@ dev = [
     "types-PyYAML",
 ]
 
+eval = [
+    "lm_eval>=0.4.13",
+    "accelerate",
+]
+
 [project.scripts]
 llmopt = "llmopt.cli:app"
 
