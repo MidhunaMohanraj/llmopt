@@ -1,0 +1,6 @@
+# Which precisions each engine can run. Check against the pinned versions in Step 3.
+engines:
+  vllm: [bf16, fp8, awq_int4, gptq_int4, mxfp4]
+  sglang: [bf16, fp8]
+  pytorch: [bf16]
+  llamacpp: [gguf]
