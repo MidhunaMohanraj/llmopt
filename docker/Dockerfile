@@ -1,6 +1,6 @@
 # Task 1.14: llmopt on top of a PINNED ROCm vLLM image.
 # Pass the exact image on the command line; there is deliberately no default.
-ARG BASE_IMAGE
+ARG BASE_IMAGE=vllm/vllm-openai-rocm@sha256:14f6a575e1fb0a580b0f633c09e06f648709d60405b85f6a7ff3f80d49f39905
 FROM ${BASE_IMAGE}
 
 WORKDIR /opt/llmopt
