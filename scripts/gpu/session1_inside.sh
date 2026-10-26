@@ -11,9 +11,16 @@ step() {
   if "$@"; then echo "RESULT $name: OK"; else echo "RESULT $name: FAILED"; fi
 }
 
+# Run a tool, save ALL its output to a file, show the top, and keep the tool's own exit code.
+capture() {
+  local name="$1" file="$2"; shift 2
+  step "$name" bash -c '"$@" > "$0" 2>&1; rc=$?; head -40 "$0"; exit $rc' "$file" "$@"
+}
+
 step versions bash -c 'record_versions.sh > /out/versions.txt 2>&1; cat /out/versions.txt'
-step rocminfo bash -c 'rocminfo > /out/rocminfo.txt 2>&1; head -30 /out/rocminfo.txt'
-step amd-smi-default bash -c 'amd-smi > /out/amd_smi_default.txt 2>&1; cat /out/amd_smi_default.txt'
+capture rocminfo /out/rocminfo.txt rocminfo
+capture amd-smi-static /out/amd_smi_static.txt amd-smi static
+capture amd-smi-default /out/amd_smi_default.txt amd-smi
 step parse-real-output python3 /work/scripts/gpu/check_parsers.py /out
 step torch-sees-gpu python3 -c "import torch; print('torch', torch.__version__, 'hip', torch.version.hip, 'gpu', torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 
@@ -59,4 +66,4 @@ fi
 
 cleanup
 step no-leftover-processes bash -c '! pgrep -f "[v]llm|[E]ngineCore"'
-step amd-smi-after bash -c 'amd-smi > /out/amd_smi_after.txt 2>&1; cat /out/amd_smi_after.txt'
+capture amd-smi-after /out/amd_smi_after.txt amd-smi

@@ -11,6 +11,14 @@ print("$pkg:", m.version("$pkg"))
 EOF
 done
 echo "rocm: $(cat /opt/rocm/.info/version 2>/dev/null || echo 'not found')"
-echo "amd-smi: $(amd-smi version 2>&1 | head -1 || echo 'not found')"
-echo "rocminfo: $(rocminfo --version 2>&1 | head -1 || echo 'not found')"
-echo "rocprofv3: $(rocprofv3 --version 2>&1 | head -1 || echo 'not found')"
+tool_version() {
+  local tool="$1"; shift
+  if command -v "$tool" > /dev/null 2>&1; then
+    echo "$tool: $("$tool" "$@" 2>&1 | head -1)"
+  else
+    echo "$tool: not found"
+  fi
+}
+tool_version amd-smi version
+tool_version rocminfo --version
+tool_version rocprofv3 --version

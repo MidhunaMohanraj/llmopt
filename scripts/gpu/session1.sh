@@ -16,6 +16,10 @@ echo "== GPU session 1 start $(date -Iseconds)"
 echo "base image: $BASE_IMAGE"
 echo "output dir: $OUT"
 
+echo "--- check GPU device"
+[ -e /dev/kfd ] || { echo "RESULT gpu-device: FAILED (no /dev/kfd on this machine)"; exit 1; }
+echo "RESULT gpu-device: OK"
+
 echo "--- pull base image"
 docker pull "$BASE_IMAGE" || { echo "RESULT pull: FAILED"; exit 1; }
 echo "RESULT pull: OK"
@@ -30,10 +34,13 @@ echo "--- run session inside the container"
 docker run --rm \
   --group-add=video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
   --device /dev/kfd --device /dev/dri --ipc=host --network=host \
-  -v "$PWD":/work -v "$MODELS_DIR":/models -v "$OUT":/out \
+  -v "$PWD":/work:ro -v "$MODELS_DIR":/models -v "$OUT":/out \
   -e HF_TOKEN -e SKIP_SERVE="${SKIP_SERVE:-0}" \
   llmopt:session1 bash /work/scripts/gpu/session1_inside.sh
-echo "container exit code: $?"
+rc=$?
+echo "container exit code: $rc"
+if [ "$rc" = 0 ]; then echo "RESULT container: OK"; else echo "RESULT container: FAILED (exit $rc)"; fi
+docker run --rm -v "$OUT":/out llmopt:session1 chown -R "$(id -u):$(id -g)" /out || echo "note: could not chown $OUT (cleaning it up may need sudo)"
 
 END=$(date +%s)
 echo "== session 1 end $(date -Iseconds), elapsed $(( (END - START) / 60 )) min"
