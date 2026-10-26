@@ -1,0 +1,6 @@
+.git
+.venv
+__pycache__
+*.pyc
+hardware_profile.json
+*.json.bak
