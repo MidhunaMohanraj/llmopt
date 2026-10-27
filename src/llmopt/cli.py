@@ -89,7 +89,7 @@ def _trial_summary(trial: TrialResult) -> str:
 
 def _check_vllm_context(engine: str, settings: dict[str, Any], workload: Workload) -> None:
     """vLLM rejects requests longer than max_model_len; say so before loading the model."""
-    if engine != "vllm":
+    if engine not in ("vllm", "vllm-rocm"):
         return
     limit = settings.get("max_model_len", 2048)
     need = workload.prompt_tokens + workload.output_tokens
@@ -103,7 +103,10 @@ def _check_vllm_context(engine: str, settings: dict[str, Any], workload: Workloa
 
 @app.command("bench")
 def bench_cmd(
-    engine: Annotated[str, typer.Option("--engine", help="pytorch or vllm.")],
+    engine: Annotated[
+        str,
+        typer.Option("--engine", help="pytorch, vllm, pytorch-rocm or vllm-rocm."),
+    ],
     model: Annotated[Path, typer.Option("--model", help="Model folder.")],
     results: Annotated[
         Path, typer.Option("--results", help="Folder to save the trial JSON in.")
