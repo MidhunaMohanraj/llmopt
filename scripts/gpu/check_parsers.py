@@ -28,6 +28,10 @@ def main() -> int:
             print(f"{name}: PARSE FAILED: {type(exc).__name__}: {exc}")
             continue
         items = result if isinstance(result, list) else [result]
+        if not items:
+            failures += 1
+            print(f"{name}: PARSE FAILED: no entries found in the output")
+            continue
         print(f"{name}: parsed {len(items)} item(s)")
         for item in items:
             print("  ", show(item))
