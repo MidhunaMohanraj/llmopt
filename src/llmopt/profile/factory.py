@@ -7,7 +7,7 @@ from pathlib import Path
 from llmopt.engines.base import EngineAdapter
 from llmopt.schemas import Config, Engine, Precision, SettingValue
 
-ENGINE_NAMES = ("pytorch", "vllm")
+ENGINE_NAMES = ("pytorch", "vllm", "pytorch-rocm", "vllm-rocm")
 KV_CACHE_DTYPES = ("auto", "fp8")
 
 
@@ -63,9 +63,9 @@ def make_config(
     precision: str = "bf16",
     kv_cache_dtype: str = "auto",
 ) -> Config:
-    if engine == "pytorch":
+    if engine in ("pytorch", "pytorch-rocm"):
         kind = Engine.PYTORCH
-    elif engine == "vllm":
+    elif engine in ("vllm", "vllm-rocm"):
         kind = Engine.VLLM
     else:
         raise _unknown_engine(engine)
@@ -88,4 +88,12 @@ def make_engine(engine: str) -> EngineAdapter:
         from llmopt.engines.vllm_cpu import VllmCpuEngine
 
         return VllmCpuEngine()
+    if engine == "pytorch-rocm":
+        from llmopt.engines.pytorch_rocm import PyTorchRocmEngine
+
+        return PyTorchRocmEngine()
+    if engine == "vllm-rocm":
+        from llmopt.engines.vllm_rocm import VllmRocmEngine
+
+        return VllmRocmEngine()
     raise _unknown_engine(engine)
