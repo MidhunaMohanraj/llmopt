@@ -10,3 +10,6 @@ venv/
 *.egg-info/
 dist/
 build/
+/results/
+/report.html
+hardware_profile.json
