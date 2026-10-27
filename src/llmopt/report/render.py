@@ -29,7 +29,7 @@ TRIAL_HEADERS = (
     "TTFT p95 (ms)",
     "TPOT (ms)",
     "Throughput (tok/s)",
-    "Peak memory (GB)",
+    "Peak memory (GiB)",
     "Run spread (%)",
     "Accuracy",
 )
