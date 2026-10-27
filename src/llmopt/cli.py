@@ -7,6 +7,7 @@ from llmopt.hardware.host import detect_host
 from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
 from llmopt.profile.factory import make_config, make_engine, parse_settings
+from llmopt.profile.workloads import get_workload
 from llmopt.report.render import write_report
 from llmopt.report.store import load_report, load_trial, load_trials, save_trial
 from llmopt.schemas import AccuracyResult, Status, TrialResult, Workload
@@ -86,6 +87,20 @@ def _trial_summary(trial: TrialResult) -> str:
     return text
 
 
+def _check_vllm_context(engine: str, settings: dict[str, Any], workload: Workload) -> None:
+    """vLLM rejects requests longer than max_model_len; say so before loading the model."""
+    if engine != "vllm":
+        return
+    limit = settings.get("max_model_len", 2048)
+    need = workload.prompt_tokens + workload.output_tokens
+    if isinstance(limit, int) and not isinstance(limit, bool) and need > limit:
+        suggest = -(-need // 1024) * 1024
+        raise ValueError(
+            f"workload {workload.name!r} needs {need} tokens but max_model_len is {limit}; "
+            f"add --settings max_model_len={suggest}"
+        )
+
+
 @app.command("bench")
 def bench_cmd(
     engine: Annotated[str, typer.Option("--engine", help="pytorch or vllm.")],
@@ -96,9 +111,18 @@ def bench_cmd(
     settings: Annotated[
         str, typer.Option("--settings", help="Engine settings, like a=1,b=true.")
     ] = "",
-    prompt_tokens: Annotated[int, typer.Option("--prompt-tokens")] = 32,
-    output_tokens: Annotated[int, typer.Option("--output-tokens")] = 16,
-    num_requests: Annotated[int, typer.Option("--num-requests")] = 8,
+    workload_name: Annotated[
+        str, typer.Option("--workload", help="Named workload: smoke, chat or long.")
+    ] = "smoke",
+    prompt_tokens: Annotated[
+        int, typer.Option("--prompt-tokens", help="Override the workload (0 = keep).")
+    ] = 0,
+    output_tokens: Annotated[
+        int, typer.Option("--output-tokens", help="Override the workload (0 = keep).")
+    ] = 0,
+    num_requests: Annotated[
+        int, typer.Option("--num-requests", help="Override the workload (0 = keep).")
+    ] = 0,
     runs: Annotated[int, typer.Option("--runs")] = 3,
     precision: Annotated[
         str, typer.Option("--precision", help="Precision, e.g. bf16 or fp8.")
@@ -109,13 +133,16 @@ def bench_cmd(
 ) -> None:
     """Run one config through the profiler and save the trial."""
     try:
-        config = make_config(engine, model, parse_settings(settings), precision, kv_cache_dtype)
+        parsed = parse_settings(settings)
+        config = make_config(engine, model, parsed, precision, kv_cache_dtype)
+        base = get_workload(workload_name)
         workload = Workload(
-            name="bench",
-            prompt_tokens=prompt_tokens,
-            output_tokens=output_tokens,
-            num_requests=num_requests,
+            name=base.name,
+            prompt_tokens=prompt_tokens or base.prompt_tokens,
+            output_tokens=output_tokens or base.output_tokens,
+            num_requests=num_requests or base.num_requests,
         )
+        _check_vllm_context(engine, parsed, workload)
         trial = run_bench(make_engine(engine), config, workload, runs=runs)
     except ValueError as error:
         typer.echo(f"error: {error}", err=True)
