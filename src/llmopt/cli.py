@@ -100,10 +100,16 @@ def bench_cmd(
     output_tokens: Annotated[int, typer.Option("--output-tokens")] = 16,
     num_requests: Annotated[int, typer.Option("--num-requests")] = 8,
     runs: Annotated[int, typer.Option("--runs")] = 3,
+    precision: Annotated[
+        str, typer.Option("--precision", help="Precision, e.g. bf16 or fp8.")
+    ] = "bf16",
+    kv_cache_dtype: Annotated[
+        str, typer.Option("--kv-cache-dtype", help="KV cache type: auto or fp8.")
+    ] = "auto",
 ) -> None:
     """Run one config through the profiler and save the trial."""
     try:
-        config = make_config(engine, model, parse_settings(settings))
+        config = make_config(engine, model, parse_settings(settings), precision, kv_cache_dtype)
         workload = Workload(
             name="bench",
             prompt_tokens=prompt_tokens,

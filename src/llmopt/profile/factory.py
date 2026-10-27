@@ -8,6 +8,7 @@ from llmopt.engines.base import EngineAdapter
 from llmopt.schemas import Config, Engine, Precision, SettingValue
 
 ENGINE_NAMES = ("pytorch", "vllm")
+KV_CACHE_DTYPES = ("auto", "fp8")
 
 
 def _coerce(text: str) -> SettingValue:
@@ -39,7 +40,29 @@ def _unknown_engine(engine: str) -> ValueError:
     return ValueError(f"engine must be one of {', '.join(ENGINE_NAMES)}, got {engine!r}")
 
 
-def make_config(engine: str, model: Path, settings: dict[str, SettingValue]) -> Config:
+def parse_precision(text: str) -> Precision:
+    """Turn 'bf16' or 'fp8' into a Precision, with a clear error for anything else."""
+    try:
+        return Precision(text.strip().lower())
+    except ValueError:
+        valid = ", ".join(p.value for p in Precision)
+        raise ValueError(f"precision must be one of {valid}, got {text!r}") from None
+
+
+def check_kv_cache_dtype(value: str) -> str:
+    if value not in KV_CACHE_DTYPES:
+        valid = ", ".join(KV_CACHE_DTYPES)
+        raise ValueError(f"kv_cache_dtype must be one of {valid}, got {value!r}")
+    return value
+
+
+def make_config(
+    engine: str,
+    model: Path,
+    settings: dict[str, SettingValue],
+    precision: str = "bf16",
+    kv_cache_dtype: str = "auto",
+) -> Config:
     if engine == "pytorch":
         kind = Engine.PYTORCH
     elif engine == "vllm":
@@ -47,7 +70,11 @@ def make_config(engine: str, model: Path, settings: dict[str, SettingValue]) -> 
     else:
         raise _unknown_engine(engine)
     return Config(
-        model=str(model), engine=kind, precision=Precision.BF16, settings=settings
+        model=str(model),
+        engine=kind,
+        precision=parse_precision(precision),
+        kv_cache_dtype=check_kv_cache_dtype(kv_cache_dtype),
+        settings=settings,
     )
 
 
