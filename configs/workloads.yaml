@@ -1,0 +1,16 @@
+# Workload shapes for `llmopt bench`.
+# OUR definition, pending review by Aswanth.
+# The adapters take token counts, not text, so a workload is a shape:
+# prompt length, output length and number of requests.
+smoke:
+  prompt_tokens: 32
+  output_tokens: 16
+  num_requests: 8
+chat:
+  prompt_tokens: 128
+  output_tokens: 256
+  num_requests: 16
+long:
+  prompt_tokens: 4096
+  output_tokens: 128
+  num_requests: 8
