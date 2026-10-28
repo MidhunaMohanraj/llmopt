@@ -8,6 +8,13 @@ from llmopt.precision.selector import (
 )
 from llmopt.schemas import Engine, Precision
 
+PHASE2_PRECISIONS = (
+    Precision.AWQ_INT4,
+    Precision.GPTQ_INT4,
+    Precision.GGUF,
+    Precision.MXFP4,
+)
+
 
 def test_mi300x_never_offers_mxfp4() -> None:
     assert Precision.MXFP4 not in supported_precisions("gfx942")
@@ -37,13 +44,19 @@ def test_every_offered_precision_runs_on_some_engine() -> None:
 
 def test_known_pairs_on_mi300x() -> None:
     pairs = set(candidate_pairs("gfx942"))
-    assert (Engine.VLLM, Precision.BF16) in pairs
-    assert (Engine.VLLM, Precision.FP8) in pairs
-    assert (Engine.SGLANG, Precision.FP8) in pairs
-    assert (Engine.LLAMACPP, Precision.GGUF) in pairs
+    assert pairs == {
+        (Engine.VLLM, Precision.BF16),
+        (Engine.VLLM, Precision.FP8),
+        (Engine.PYTORCH, Precision.BF16),
+    }
 
 
-def test_pytorch_is_bf16_only_and_llamacpp_is_gguf_only() -> None:
+def test_phase2_engines_and_precisions_are_not_offered_on_mi300x() -> None:
+    pairs = candidate_pairs("gfx942")
+    assert not any(engine in (Engine.SGLANG, Engine.LLAMACPP) for engine, _ in pairs)
+    assert not any(precision in PHASE2_PRECISIONS for _, precision in pairs)
+
+
+def test_pytorch_is_bf16_only() -> None:
     pairs = candidate_pairs("gfx942")
     assert {p for e, p in pairs if e == Engine.PYTORCH} == {Precision.BF16}
-    assert {p for e, p in pairs if e == Engine.LLAMACPP} == {Precision.GGUF}
