@@ -18,7 +18,7 @@ def test_plan_lists_the_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(app, ["plan", "--gfx", "gfx942"])
     assert result.exit_code == 0
     assert "Candidates for gfx942: 2" in result.output
-    assert "1 of 2 can be run" in result.output
+    assert "1 of 2 can run on the bench PC" in result.output
 
 
 def test_plan_rejects_an_unknown_gpu() -> None:
