@@ -144,7 +144,7 @@ def _generate_pass(
     wall_ms = 0.0
     for start in range(0, len(requests), concurrency):
         began = clock()
-        results.extend(engine.generate(requests[start : start + concurrency]))
+        results.extend(engine.generate_batch(requests[start : start + concurrency]))
         wall_ms += (clock() - began) * 1000.0
     return results, wall_ms
 
