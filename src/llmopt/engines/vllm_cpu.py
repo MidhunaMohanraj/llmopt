@@ -52,8 +52,44 @@ def run_request(
     return GenResult(request_id=request_id, token_times_ms=times, text=text)
 
 
+def run_batch(
+    engine: Any, items: list[tuple[Any, list[int], str, str, int]]
+) -> list[GenResult]:
+    """Run several requests at the same time through the vLLM step loop.
+
+    Each item is (params, prompt_ids, vllm_id, request_id, new_tokens). All requests
+    are added before the first step, and every token is timed from that one start.
+    """
+    times: dict[str, list[float]] = {item[2]: [] for item in items}
+    texts: dict[str, str] = {item[2]: "" for item in items}
+    start = time.perf_counter()
+    for params, prompt_ids, vllm_id, _, _ in items:
+        engine.add_request(vllm_id, {"prompt_token_ids": prompt_ids}, params)
+    while engine.has_unfinished_requests():
+        for out in engine.step():
+            seen = times.get(out.request_id)
+            if seen is None:
+                continue
+            now = (time.perf_counter() - start) * 1000.0
+            made = len(out.outputs[0].token_ids)
+            seen.extend([now] * (made - len(seen)))
+            texts[out.request_id] = out.outputs[0].text
+    results: list[GenResult] = []
+    for _, _, vllm_id, request_id, new_tokens in items:
+        got = times[vllm_id]
+        if len(got) != new_tokens:
+            raise RuntimeError(
+                f"request {request_id}: expected {new_tokens} tokens, vLLM returned {len(got)}"
+            )
+        results.append(
+            GenResult(request_id=request_id, token_times_ms=got, text=texts[vllm_id])
+        )
+    return results
+
+
 class VllmCpuEngine(EngineAdapter):
     name = "vllm-cpu"
+    supports_concurrency = True
 
     def __init__(self) -> None:
         self._llm: Any = None
@@ -137,6 +173,29 @@ class VllmCpuEngine(EngineAdapter):
                 )
             )
         return results
+
+    def generate_batch(self, requests: list[GenRequest]) -> list[GenResult]:
+        """Run all the requests at the same time and let vLLM batch them."""
+        if self._llm is None or self._tokenizer is None:
+            raise RuntimeError("call prepare() before generate_batch()")
+        items: list[tuple[Any, list[int], str, str, int]] = []
+        for req in requests:
+            total = req.prompt_tokens + req.max_new_tokens
+            if total > self._max_model_len:
+                raise ValueError(
+                    f"request needs {total} tokens, max_model_len is {self._max_model_len}"
+                )
+            self._counter += 1
+            items.append(
+                (
+                    self._make_sampling_params(req.max_new_tokens),
+                    build_prompt_ids(self._tokenizer, req.prompt_tokens),
+                    f"{req.request_id}#{self._counter}",
+                    req.request_id,
+                    req.max_new_tokens,
+                )
+            )
+        return run_batch(self._llm.llm_engine, items)
 
     def teardown(self) -> None:
         llm, self._llm = self._llm, None
