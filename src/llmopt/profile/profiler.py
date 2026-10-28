@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import statistics
+import time
 from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel
@@ -42,8 +43,14 @@ def percentile(values: Sequence[float], q: float) -> float:
     return ordered[low] + (ordered[high] - ordered[low]) * (position - low)
 
 
-def run_metrics(results: list[GenResult]) -> RunMetrics:
-    """Summarize one pass over the requests (requests ran one after another)."""
+def run_metrics(results: list[GenResult], wall_ms: float | None = None) -> RunMetrics:
+    """Summarize one pass over the requests.
+
+    By default the requests ran one after another, so the time spent is the sum of
+    the request times. For concurrent requests pass wall_ms, the real elapsed time:
+    adding up overlapping request times would count the same seconds many times and
+    make throughput look too low.
+    """
     if not results:
         raise ValueError("no results to summarize")
     ttfts: list[float] = []
@@ -60,6 +67,10 @@ def run_metrics(results: list[GenResult]) -> RunMetrics:
         tpots.append((times[-1] - times[0]) / (len(times) - 1))
         tokens += len(times)
         busy_ms += times[-1]
+    if wall_ms is not None:
+        if wall_ms <= 0:
+            raise ValueError("wall_ms must be greater than 0")
+        busy_ms = wall_ms
     if busy_ms <= 0:
         raise ValueError("total request time must be greater than 0")
     return RunMetrics(
@@ -101,6 +112,43 @@ def aggregate_runs(runs: list[RunMetrics], peak_memory_bytes: int) -> Metrics:
     )
 
 
+def check_concurrency(engine: EngineAdapter, concurrency: int, request_count: int) -> None:
+    """Refuse a concurrency level that this engine or request count cannot honour."""
+    if concurrency < 1:
+        raise ValueError(f"concurrency must be at least 1, got {concurrency}")
+    if concurrency == 1:
+        return
+    if not engine.supports_concurrency:
+        raise ValueError(
+            f"{type(engine).__name__} runs requests one at a time, "
+            f"so concurrency must be 1, got {concurrency}"
+        )
+    if request_count % concurrency != 0:
+        raise ValueError(
+            f"num_requests ({request_count}) must be a multiple of concurrency "
+            f"({concurrency}) so that every wave is full"
+        )
+
+
+def _generate_pass(
+    engine: EngineAdapter,
+    requests: list[GenRequest],
+    concurrency: int,
+    clock: Callable[[], float],
+) -> tuple[list[GenResult], float | None]:
+    """One pass over all requests. Returns the results and, for concurrent runs,
+    the real elapsed time in ms (None means: use the sum of request times)."""
+    if concurrency == 1:
+        return engine.generate(requests), None
+    results: list[GenResult] = []
+    wall_ms = 0.0
+    for start in range(0, len(requests), concurrency):
+        began = clock()
+        results.extend(engine.generate(requests[start : start + concurrency]))
+        wall_ms += (clock() - began) * 1000.0
+    return results, wall_ms
+
+
 def profile_engine(
     engine: EngineAdapter,
     requests: list[GenRequest],
@@ -109,22 +157,30 @@ def profile_engine(
     warmup: bool = True,
     spread_limit_pct: float = 5.0,
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
+    concurrency: int = 1,
+    clock: Callable[[], float] = time.perf_counter,
 ) -> ProfileResult:
     """Profile a prepared engine. The caller prepares and tears down the engine.
 
     Order: one discarded warm-up pass, `runs` timed passes, then one extra pass
     during which memory is sampled (its timings are not used).
+    With concurrency above 1 the requests are sent in waves of that size, one
+    generate() call per wave, and throughput uses the real elapsed time.
     peak_memory_gb holds GiB (2**30 bytes).
     """
     if runs < 2:
         raise ValueError("runs must be at least 2 to measure stability")
     if not requests:
         raise ValueError("no requests to run")
+    check_concurrency(engine, concurrency, len(requests))
     if warmup:
-        engine.generate(requests)
-    run_list = [run_metrics(engine.generate(requests)) for _ in range(runs)]
+        _generate_pass(engine, requests, concurrency, clock)
+    run_list: list[RunMetrics] = []
+    for _ in range(runs):
+        results, wall_ms = _generate_pass(engine, requests, concurrency, clock)
+        run_list.append(run_metrics(results, wall_ms))
     with PeakMemoryMonitor(read_memory_bytes) as monitor:
-        engine.generate(requests)
+        _generate_pass(engine, requests, concurrency, clock)
     metrics = aggregate_runs(run_list, monitor.peak_bytes)
     method = (
         "process-tree PSS (RSS fallback)"
