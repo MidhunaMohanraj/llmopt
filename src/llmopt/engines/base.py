@@ -37,6 +37,9 @@ class GenResult(BaseModel):
 
 class EngineAdapter(ABC):
     name: str
+    # True only if generate() really runs the requests it is given at the same time.
+    # Engines that loop over the requests one by one must leave this False.
+    supports_concurrency: bool = False
 
     @abstractmethod
     def supports(self, hardware: HardwareProfile, model: str, precision: Precision) -> SupportResult:

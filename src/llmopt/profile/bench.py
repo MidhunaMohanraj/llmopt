@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 
 from llmopt.engines.base import EngineAdapter, GenRequest
 from llmopt.profile.memory import process_tree_memory_bytes
-from llmopt.profile.profiler import profile_engine
+from llmopt.profile.profiler import check_concurrency, profile_engine
 from llmopt.schemas import Config, Status, TrialResult, Workload
 
 
@@ -30,13 +31,10 @@ def run_bench(
     warmup: bool = True,
     spread_limit_pct: float = 5.0,
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
+    clock: Callable[[], float] = time.perf_counter,
 ) -> TrialResult:
     """Prepare the engine, profile it, tear it down. A crash gives a FAILED trial."""
-    if workload.concurrency != 1:
-        raise ValueError(
-            f"the profiler runs requests one at a time, so concurrency must be 1, "
-            f"got {workload.concurrency}"
-        )
+    check_concurrency(engine, workload.concurrency, workload.num_requests)
     if runs < 2:
         raise ValueError(f"runs must be at least 2 to measure stability, got {runs}")
     requests = build_requests(workload)
@@ -49,6 +47,8 @@ def run_bench(
             warmup=warmup,
             spread_limit_pct=spread_limit_pct,
             read_memory_bytes=read_memory_bytes,
+            concurrency=workload.concurrency,
+            clock=clock,
         )
     except Exception as error:  # noqa: BLE001
         trial = TrialResult(
