@@ -1,8 +1,10 @@
+import json
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
+from llmopt.hardware.gpu import detect_gpus
 from llmopt.hardware.host import detect_host
 from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
@@ -33,10 +35,18 @@ def detect(
     output: Annotated[
         Path, typer.Option("--output", "-o", help="Where to save the JSON.")
     ] = Path("hardware_profile.json"),
+    gpu: Annotated[
+        bool, typer.Option("--gpu", help="Also read GPUs with rocminfo and amd-smi.")
+    ] = False,
 ) -> None:
     """Print and save the host hardware profile."""
     profile = detect_host()
-    text = profile.model_dump_json(indent=2)
+    if gpu:
+        data = profile.model_dump(mode="json")
+        data["gpus"] = detect_gpus().model_dump(mode="json")
+        text = json.dumps(data, indent=2)
+    else:
+        text = profile.model_dump_json(indent=2)
     output.write_text(text + "\n")
     typer.echo(text)
     typer.echo(f"Saved to {output}")

@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from llmopt.schemas import SettingValue
 from llmopt.settings.table import BY_NAME, SETTINGS, render_settings, validate_settings
 
 
@@ -28,7 +29,11 @@ def test_nothing_is_marked_verified_yet() -> None:
 
 
 def test_valid_settings_have_no_errors() -> None:
-    values = {"gpu_memory_utilization": 0.92, "max_num_seqs": 256, "kv_cache_dtype": "fp8"}
+    values: dict[str, SettingValue] = {
+        "gpu_memory_utilization": 0.92,
+        "max_num_seqs": 256,
+        "kv_cache_dtype": "fp8",
+    }
     assert validate_settings(values) == []
 
 
@@ -46,8 +51,8 @@ def test_valid_settings_have_no_errors() -> None:
         ({"cudagraph_mode": "SOMETIMES"}, "must be one of"),
     ],
 )
-def test_bad_values_are_rejected(values: dict[str, object], fragment: str) -> None:
-    errors = validate_settings(values)  # type: ignore[arg-type]
+def test_bad_values_are_rejected(values: dict[str, SettingValue], fragment: str) -> None:
+    errors = validate_settings(values)
     assert errors
     assert fragment in " ".join(errors)
 
