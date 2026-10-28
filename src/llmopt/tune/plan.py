@@ -1,4 +1,4 @@
-"""List the engine and precision pairs worth trying on a GPU, and which ones we can run."""
+"""Which adapters can run each engine and precision pair."""
 
 from __future__ import annotations
 
@@ -6,17 +6,29 @@ from pydantic import BaseModel
 
 from llmopt.schemas import Engine, Precision
 
-# Adapters that exist today. Both are CPU adapters and support bf16 only.
-ADAPTER_PRECISIONS: dict[Engine, frozenset[Precision]] = {
-    Engine.PYTORCH: frozenset({Precision.BF16}),
-    Engine.VLLM: frozenset({Precision.BF16}),
+# Adapter names are the values accepted by `llmopt bench --engine`.
+# The CPU adapters run on the bench PC. The ROCm adapters are drafts: they have never run
+# on a GPU.
+ADAPTERS: dict[tuple[Engine, Precision], tuple[str, ...]] = {
+    (Engine.PYTORCH, Precision.BF16): ("pytorch", "pytorch-rocm"),
+    (Engine.VLLM, Precision.BF16): ("vllm", "vllm-rocm"),
+    (Engine.VLLM, Precision.FP8): ("vllm-rocm",),
 }
+BENCH_ADAPTERS = frozenset({"pytorch", "vllm"})
 
 
 class PlanEntry(BaseModel):
     engine: Engine
     precision: Precision
-    has_adapter: bool
+    adapters: list[str]
+
+    @property
+    def has_adapter(self) -> bool:
+        return bool(self.adapters)
+
+    @property
+    def runs_on_bench(self) -> bool:
+        return any(name in BENCH_ADAPTERS for name in self.adapters)
 
 
 def build_plan(pairs: list[tuple[Engine, Precision]]) -> list[PlanEntry]:
@@ -24,21 +36,27 @@ def build_plan(pairs: list[tuple[Engine, Precision]]) -> list[PlanEntry]:
         PlanEntry(
             engine=engine,
             precision=precision,
-            has_adapter=precision in ADAPTER_PRECISIONS.get(engine, frozenset()),
+            adapters=list(ADAPTERS.get((engine, precision), ())),
         )
         for engine, precision in pairs
     ]
 
 
+def _describe(name: str) -> str:
+    if name in BENCH_ADAPTERS:
+        return f"{name} (runs on the bench PC)"
+    return f"{name} (draft, not tested on a GPU)"
+
+
 def format_plan(gfx_target: str, entries: list[PlanEntry]) -> str:
     lines = [f"Candidates for {gfx_target}: {len(entries)}"]
     for entry in entries:
-        status = (
-            "adapter exists (CPU adapter, bf16 only)"
-            if entry.has_adapter
-            else "no adapter yet"
-        )
+        status = ", ".join(_describe(name) for name in entry.adapters) or "no adapter yet"
         lines.append(f"  {entry.engine.value:<9} {entry.precision.value:<10} {status}")
-    ready = sum(1 for entry in entries if entry.has_adapter)
-    lines.append(f"{ready} of {len(entries)} can be run with the adapters we have")
+    with_adapter = sum(1 for entry in entries if entry.has_adapter)
+    on_bench = sum(1 for entry in entries if entry.runs_on_bench)
+    lines.append(
+        f"{with_adapter} of {len(entries)} have an adapter; "
+        f"{on_bench} of {len(entries)} can run on the bench PC (no GPU)"
+    )
     return "\n".join(lines)
