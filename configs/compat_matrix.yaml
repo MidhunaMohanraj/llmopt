@@ -1,6 +1,6 @@
-# Which precisions each engine can run. Check against the pinned versions in Step 3.
+# Which precisions each engine can run (Phase 1 scope: vLLM and PyTorch, BF16 and FP8).
+# SGLang, llama.cpp, AWQ, GPTQ and GGUF are Phase 2. MXFP4 is listed only for the MI350 series.
+# Check against the pinned versions.
 engines:
-  vllm: [bf16, fp8, awq_int4, gptq_int4, mxfp4]
-  sglang: [bf16, fp8]
+  vllm: [bf16, fp8, mxfp4]
   pytorch: [bf16]
-  llamacpp: [gguf]
