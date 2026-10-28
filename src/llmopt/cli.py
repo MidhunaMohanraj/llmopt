@@ -13,6 +13,7 @@ from llmopt.profile.workloads import get_workload
 from llmopt.report.render import write_report
 from llmopt.report.store import load_report, load_trial, load_trials, save_trial
 from llmopt.schemas import AccuracyResult, Status, TrialResult, Workload
+from llmopt.sweep_cli import sweep_cmd
 from llmopt.tune.plan import build_plan, format_plan
 from llmopt.validate.baseline import (
     Baseline,
@@ -282,6 +283,9 @@ def validate_cmd(
         updated = attach_accuracy(trial_data, result)
         trial.write_text(updated.model_dump_json(indent=2) + "\n")
         typer.echo(f"Attached to {trial}")
+
+
+app.command("sweep")(sweep_cmd)
 
 
 if __name__ == "__main__":
