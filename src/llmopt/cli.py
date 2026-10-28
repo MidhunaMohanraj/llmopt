@@ -6,6 +6,7 @@ import typer
 
 from llmopt.hardware.gpu import detect_gpus
 from llmopt.hardware.host import detect_host
+from llmopt.optimize_cli import optimize_cmd
 from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
 from llmopt.profile.factory import make_config, make_engine, parse_settings
@@ -286,6 +287,7 @@ def validate_cmd(
 
 
 app.command("sweep")(sweep_cmd)
+app.command("optimize")(optimize_cmd)
 
 
 if __name__ == "__main__":
