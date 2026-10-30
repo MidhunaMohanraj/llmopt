@@ -11,6 +11,18 @@ from typing import Any
 from llmopt.engines.base import EngineAdapter, GenRequest, GenResult, SupportResult
 from llmopt.engines.pytorch_cpu import build_prompt_ids
 from llmopt.schemas import Config, Engine, HardwareProfile, Precision
+from llmopt.settings.apply import apply_settings
+
+# Settings this adapter applies: its own two, plus the vLLM settings that work on CPU.
+CPU_SETTINGS = frozenset(
+    {
+        "max_model_len",
+        "kv_cache_space_gib",
+        "max_num_seqs",
+        "max_num_batched_tokens",
+        "enable_chunked_prefill",
+    }
+)
 
 
 def _int_setting(config: Config, key: str, default: int) -> int:
@@ -113,6 +125,7 @@ class VllmCpuEngine(EngineAdapter):
             raise ValueError(f"vllm cpu adapter supports bf16 only, got {config.precision.value}")
         if config.kv_cache_dtype != "auto":
             raise ValueError(f"kv_cache_dtype must be 'auto', got {config.kv_cache_dtype!r}")
+        applied = apply_settings(config.settings, CPU_SETTINGS, self.name)
         kv_space = _int_setting(config, "kv_cache_space_gib", 4)
         max_len = _int_setting(config, "max_model_len", 2048)
         path = Path(config.model)
@@ -129,6 +142,7 @@ class VllmCpuEngine(EngineAdapter):
             dtype="bfloat16",
             max_model_len=max_len,
             enable_prefix_caching=False,
+            **applied.kwargs,
         )
         warm_ids = build_prompt_ids(self._tokenizer, 32)
         warm = SamplingParams(temperature=0.0, max_tokens=4, min_tokens=4, ignore_eos=True)
