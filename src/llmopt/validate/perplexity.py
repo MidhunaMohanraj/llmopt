@@ -36,20 +36,36 @@ def load_wikitext_texts(path: Path) -> list[str]:
     return texts
 
 
+def check_device(device: str) -> None:
+    """Accept 'cpu', 'cuda' or 'cuda:N'. ROCm builds of torch call AMD GPUs 'cuda'."""
+    name, colon, index = device.partition(":")
+    valid = (name == "cpu" and not colon) or (
+        name == "cuda" and (not colon or index.isdigit())
+    )
+    if not valid:
+        raise ValueError(f"device must be 'cpu', 'cuda' or 'cuda:N', got {device!r}")
+
+
 def evaluate_perplexity(
     model: Any,
     tokenizer: Any,
     texts: list[str],
     window_tokens: int = 512,
     max_windows: int = 20,
+    device: str = "cpu",
 ) -> PerplexityResult:
-    """Score up to max_windows non-overlapping windows of window_tokens tokens."""
+    """Score up to max_windows non-overlapping windows of window_tokens tokens.
+
+    The caller moves the model to `device`; the input windows are placed there too.
+    Only the CPU path is tested. The GPU path is untested.
+    """
     import torch
 
     if window_tokens < 2:
         raise ValueError(f"window_tokens must be at least 2, got {window_tokens}")
     if max_windows < 1:
         raise ValueError(f"max_windows must be at least 1, got {max_windows}")
+    check_device(device)
     # Cut the text first so we do not tokenize the whole corpus for a small sample.
     text = "\n\n".join(texts)[: window_tokens * max_windows * 8]
     ids: list[int] = tokenizer.encode(text, add_special_tokens=False)
@@ -63,7 +79,7 @@ def evaluate_perplexity(
     with torch.inference_mode():
         for index in range(windows):
             chunk = ids[index * window_tokens : (index + 1) * window_tokens]
-            input_ids = torch.tensor([chunk], dtype=torch.long)
+            input_ids = torch.tensor([chunk], dtype=torch.long, device=device)
             logits = model(input_ids=input_ids, use_cache=False).logits
             loss = torch.nn.functional.cross_entropy(
                 logits[0, :-1].float(), input_ids[0, 1:], reduction="sum"
