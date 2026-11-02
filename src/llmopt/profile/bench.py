@@ -55,6 +55,7 @@ def run_bench(
             config=config,
             status=Status.FAILED,
             reason=f"{type(error).__name__}: {error}",
+            workload=workload.name,
         )
     else:
         reason = None
@@ -64,7 +65,11 @@ def run_bench(
                 f"is over the {spread_limit_pct:.1f}% limit"
             )
         trial = TrialResult(
-            config=config, status=Status.OK, reason=reason, metrics=result.metrics
+            config=config,
+            status=Status.OK,
+            reason=reason,
+            metrics=result.metrics,
+            workload=workload.name,
         )
     try:
         engine.teardown()

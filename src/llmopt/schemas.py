@@ -101,6 +101,7 @@ class TrialResult(BaseModel):
     reason: str | None = None
     metrics: Metrics | None = None
     accuracy: list[AccuracyResult] = Field(default_factory=list)
+    workload: str | None = None
 
 
 class Report(BaseModel):
