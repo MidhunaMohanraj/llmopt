@@ -18,7 +18,8 @@ def load_report(path: Path) -> Report:
 
 def trial_path(directory: Path, trial: TrialResult) -> Path:
     """One file per config, named by the config's own short key."""
-    return directory / f"{trial.config.key()}.json"
+    suffix = f"-{trial.workload}" if trial.workload else ""
+    return directory / f"{trial.config.key()}{suffix}.json"
 
 
 def save_trial(trial: TrialResult, directory: Path) -> Path:
