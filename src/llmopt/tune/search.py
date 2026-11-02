@@ -7,6 +7,7 @@ from collections.abc import Callable
 from pydantic import BaseModel
 
 from llmopt.schemas import Config, Objective, SettingValue, Status, TrialResult
+from llmopt.settings.apply import NOT_IN_PINNED_VLLM, SET_ELSEWHERE
 from llmopt.settings.table import BY_NAME, Setting, validate_settings
 
 # What each optimize name means: the Metrics field, and whether higher is better.
@@ -123,7 +124,8 @@ def candidate_values(setting: Setting) -> list[SettingValue]:
 
 def default_candidates(names: list[str] | None = None) -> dict[str, list[SettingValue]]:
     """Candidate values for the named settings, or for every known setting."""
-    chosen = names if names is not None else list(BY_NAME)
+    refused = set(NOT_IN_PINNED_VLLM) | set(SET_ELSEWHERE)
+    chosen = names if names is not None else [n for n in BY_NAME if n not in refused]
     result: dict[str, list[SettingValue]] = {}
     for name in chosen:
         setting = BY_NAME.get(name)
