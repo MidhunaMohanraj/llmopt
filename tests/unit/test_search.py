@@ -188,4 +188,11 @@ def test_default_candidates_rejects_unknown_name() -> None:
 def test_default_candidates_covers_known_settings() -> None:
     result = default_candidates()
     assert result["max_num_seqs"] == [512, 2048]
-    assert "enable_prefix_caching" in result
+    assert "enable_prefix_caching" not in result
+    assert "kv_cache_dtype" not in result
+    assert "calculate_kv_scales" not in result
+
+
+def test_a_refused_setting_can_still_be_named_explicitly() -> None:
+    result = default_candidates(["kv_cache_dtype"])
+    assert "kv_cache_dtype" in result
