@@ -5,6 +5,7 @@ FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.source="https://github.com/MidhunaMohanraj/llmopt"
 LABEL org.opencontainers.image.description="llmopt on a pinned ROCm vLLM base image"
+LABEL org.opencontainers.image.version="0.1.0"
 
 WORKDIR /opt/llmopt
 COPY pyproject.toml README.md ./
