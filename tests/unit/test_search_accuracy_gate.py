@@ -11,6 +11,7 @@ from llmopt.schemas import (
     Metrics,
     Objective,
     Precision,
+    SettingValue,
     Status,
     TrialResult,
 )
@@ -18,7 +19,7 @@ from llmopt.tune.search import run_search
 
 SEQS = "max_num_seqs"
 CONFIG = Config(model="/models/example", engine=Engine.VLLM, precision=Precision.BF16)
-CANDIDATES = {SEQS: [512, 2048]}
+CANDIDATES: dict[str, list[SettingValue]] = {SEQS: [512, 2048]}
 BAD_DROP_PCT = 3.0
 
 
