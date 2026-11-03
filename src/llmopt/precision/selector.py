@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import yaml
@@ -9,8 +10,17 @@ from pydantic import BaseModel
 
 from llmopt.schemas import Engine, Precision
 
+
 # Works when llmopt is installed with "pip install -e". The repo root is three levels up.
-CONFIG_DIR = Path(__file__).resolve().parents[3] / "configs"
+def config_dir() -> Path:
+    """Folder with the YAML configs; LLMOPT_CONFIG_DIR overrides the default."""
+    override = os.environ.get("LLMOPT_CONFIG_DIR")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[3] / "configs"
+
+
+CONFIG_DIR = config_dir()
 
 
 class GpuInfo(BaseModel):
