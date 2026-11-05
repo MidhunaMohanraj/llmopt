@@ -23,6 +23,7 @@ from llmopt.validate.baseline import (
     read_baseline,
     write_baseline,
 )
+from llmopt.validate.perplexity import check_device
 
 app = typer.Typer(help="llmopt: find the best way to serve an LLM on an AMD GPU.")
 
@@ -184,11 +185,13 @@ def plan_cmd(
 TASKS = {"ppl": "wikitext2_perplexity", "arc": "arc_easy_local"}
 
 
-def _score(task: str, model: Path, datasets: Path, limit: int | None) -> float:
+def _score(
+    task: str, model: Path, datasets: Path, limit: int | None, device: str
+) -> float:
     if task == "arc":
         from llmopt.validate.lmeval import run_arc_easy
 
-        return run_arc_easy(model, datasets, limit=limit)
+        return run_arc_easy(model, datasets, limit=limit, device=device)
 
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -200,10 +203,13 @@ def _score(task: str, model: Path, datasets: Path, limit: int | None) -> float:
     )
     tokenizer = AutoTokenizer.from_pretrained(str(model))
     network: Any = AutoModelForCausalLM.from_pretrained(
-        str(model), torch_dtype=torch.bfloat16
+        str(model), dtype=torch.bfloat16
     )
+    network.to(device)
     network.eval()
-    result = evaluate_perplexity(network, tokenizer, texts, max_windows=limit or 20)
+    result = evaluate_perplexity(
+        network, tokenizer, texts, max_windows=limit or 20, device=device
+    )
     return result.perplexity
 
 
@@ -233,6 +239,9 @@ def validate_cmd(
         typer.Option("--limit", help="Smoke tests only: windows or questions."),
     ] = None,
     datasets: Annotated[Path, typer.Option("--datasets")] = Path("~/datasets"),
+    device: Annotated[
+        str, typer.Option("--device", help="cpu, cuda or cuda:N.")
+    ] = "cpu",
     trial: Annotated[
         Path | None, typer.Option("--trial", help="Trial JSON to attach the result to.")
     ] = None,
@@ -258,8 +267,9 @@ def validate_cmd(
                 f"WARNING: --limit {limit} used. This is a smoke run, not a real score.",
                 err=True,
             )
-        score = _score(task, model, datasets.expanduser(), limit)
-    except (ValueError, FileNotFoundError, RuntimeError) as error:
+        check_device(device)
+        score = _score(task, model, datasets.expanduser(), limit, device)
+    except (ValueError, OSError, RuntimeError) as error:
         typer.echo(f"error: {error}", err=True)
         raise typer.Exit(code=1) from error
 
