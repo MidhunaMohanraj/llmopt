@@ -16,7 +16,9 @@ runner = CliRunner()
 
 
 def use_score(monkeypatch: pytest.MonkeyPatch, value: float) -> None:
-    def fake(task: str, model: Path, datasets: Path, limit: int | None) -> float:
+    def fake(
+        task: str, model: Path, datasets: Path, limit: int | None, device: str
+    ) -> float:
         return value
 
     monkeypatch.setattr(cli_module, "_score", fake)
@@ -140,3 +142,65 @@ def test_missing_baseline_file_exits_1(tmp_path: Path) -> None:
         ["validate", "--model", "/m", "--task", "arc", "--baseline", str(missing)],
     )
     assert result.exit_code == 1
+
+
+def scorer_that_records(monkeypatch: pytest.MonkeyPatch, seen: list[str]) -> None:
+    def fake(
+        task: str, model: Path, datasets: Path, limit: int | None, device: str
+    ) -> float:
+        seen.append(device)
+        return 1.0
+
+    monkeypatch.setattr(cli_module, "_score", fake)
+
+
+def test_device_reaches_the_scorer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+    scorer_that_records(monkeypatch, seen)
+    path = tmp_path / "b.json"
+    args = ["validate", "--model", "/m", "--task", "ppl", "--write-baseline", str(path)]
+    result = runner.invoke(app, [*args, "--device", "cuda:1"])
+    assert result.exit_code == 0
+    assert seen == ["cuda:1"]
+
+
+def test_device_defaults_to_cpu(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+    scorer_that_records(monkeypatch, seen)
+    path = tmp_path / "b.json"
+    args = ["validate", "--model", "/m", "--task", "ppl", "--write-baseline", str(path)]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0
+    assert seen == ["cpu"]
+
+
+def test_bad_device_is_rejected_before_scoring(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+    scorer_that_records(monkeypatch, seen)
+    path = tmp_path / "b.json"
+    args = ["validate", "--model", "/m", "--task", "ppl", "--write-baseline", str(path)]
+    result = runner.invoke(app, [*args, "--device", "tpu"])
+    assert result.exit_code == 1
+    assert seen == []
+
+
+def test_os_error_from_the_scorer_exits_cleanly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(
+        task: str, model: Path, datasets: Path, limit: int | None, device: str
+    ) -> float:
+        raise OSError("model folder not found")
+
+    monkeypatch.setattr(cli_module, "_score", broken)
+    path = tmp_path / "b.json"
+    args = ["validate", "--model", "/m", "--task", "ppl", "--write-baseline", str(path)]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
