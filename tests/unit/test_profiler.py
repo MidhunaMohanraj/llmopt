@@ -84,11 +84,11 @@ def test_spread_pct() -> None:
 def test_profile_discards_warmup_and_takes_medians() -> None:
     engine = ScriptedEngine(
         [
-            [900, 1800, 2700],  # warm-up, must not count
+            [900, 1800, 2700],
             [100, 130, 160],
             [102, 132, 162],
             [98, 128, 158],
-            [100, 130, 160],  # memory pass, timings unused
+            [100, 130, 160],
         ]
     )
     result = profile_engine(engine, REQUESTS, read_memory_bytes=lambda: THREE_GIB)

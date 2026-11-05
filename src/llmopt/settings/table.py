@@ -16,12 +16,12 @@ class Setting(BaseModel):
     kind: Kind
     default: bool | int | float | str | None
     target: Target
-    flag: str  # CLI flag, environment variable, or compilation-config key
+    flag: str
     note: str
     choices: list[str] = []
     low: float | None = None
     high: float | None = None
-    negatable: bool = False  # bool arg that has a --no-<flag> form
+    negatable: bool = False
     verified: bool = False
 
 

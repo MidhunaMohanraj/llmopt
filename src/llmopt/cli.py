@@ -282,7 +282,7 @@ def validate_cmd(
         typer.echo(f"Baseline saved to {write_baseline_to}")
         return
     if saved is None:
-        return  # not reachable: the checks above need one of the two options
+        return
     result = _compare(task_name, score, saved.score)
     typer.echo(
         f"baseline {result.baseline_score:.4f}, "
