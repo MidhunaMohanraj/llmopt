@@ -65,7 +65,7 @@ def test_fp8_weights_only_shrink_linear_layers() -> None:
 
 def test_kv_cache_bytes_scales_with_format_tokens_and_batch() -> None:
     cfg = _cfg("llama-3.1-8b-instruct.json")
-    per_token_bf16 = 2 * 32 * 8 * 128 * 2  # keys+values x layers x kv heads x head_dim x 2 bytes
+    per_token_bf16 = 2 * 32 * 8 * 128 * 2
     assert kv_cache_bytes(cfg, 1) == per_token_bf16
     assert kv_cache_bytes(cfg, 1, "fp8") == per_token_bf16 // 2
     assert kv_cache_bytes(cfg, 1000, batch=4) == per_token_bf16 * 1000 * 4

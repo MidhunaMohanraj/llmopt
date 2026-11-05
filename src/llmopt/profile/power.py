@@ -81,7 +81,7 @@ class PowerSampler:
     def __enter__(self) -> Self:
         self.samples = []
         self.error = None
-        self._sample()  # a failure here is raised at once, on the caller's thread
+        self._sample()
         self._stop.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()

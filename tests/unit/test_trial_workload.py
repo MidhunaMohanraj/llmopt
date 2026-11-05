@@ -35,5 +35,5 @@ def test_file_name_includes_the_workload(tmp_path: Path) -> None:
 def test_old_trial_files_without_a_workload_still_load() -> None:
     config = Config(model="/models/example", engine=Engine.VLLM, precision=Precision.BF16)
     old = TrialResult(config=config, status=Status.OK).model_dump_json()
-    assert "workload" in old  # the field exists, defaulting to null
+    assert "workload" in old
     assert TrialResult.model_validate_json(old).workload is None
