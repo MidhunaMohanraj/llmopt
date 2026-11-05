@@ -1,5 +1,3 @@
-"""Run one config at several concurrency levels and collect the trials."""
-
 from __future__ import annotations
 
 import time
@@ -27,7 +25,6 @@ class SweepResult(BaseModel):
 
 
 def parse_levels(text: str) -> list[int]:
-    """Parse '1,2,4,8' into increasing whole numbers."""
     levels: list[int] = []
     for part in text.split(","):
         item = part.strip()
@@ -48,7 +45,6 @@ def parse_levels(text: str) -> list[int]:
 
 
 def requests_for_level(base: int, level: int) -> int:
-    """At least `base` requests and at least one full wave, in whole waves."""
     wanted = max(base, level)
     return -(-wanted // level) * level
 
@@ -63,7 +59,6 @@ def run_sweep(
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
     clock: Callable[[], float] = time.perf_counter,
 ) -> SweepResult:
-    """Bench the config once per level. Stops after the first failed level."""
     if any(level > 1 for level in levels) and not make_engine().supports_concurrency:
         raise ValueError(
             "this engine runs requests one at a time, so only concurrency 1 can be swept"

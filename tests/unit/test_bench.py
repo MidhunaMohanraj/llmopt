@@ -27,8 +27,6 @@ def fake_memory() -> int:
 
 
 class ScriptedEngine(EngineAdapter):
-    """Test double with made-up timings. Never use its numbers as a benchmark."""
-
     name = "scripted"
 
     def __init__(

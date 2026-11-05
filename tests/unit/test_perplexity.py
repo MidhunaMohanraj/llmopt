@@ -21,8 +21,6 @@ needs_torch = pytest.mark.skipif(
 
 
 class UniformModel:
-    """Predicts every token with equal probability, so perplexity must equal VOCAB."""
-
     def __call__(self, input_ids: Any, **kwargs: Any) -> SimpleNamespace:
         import torch
 

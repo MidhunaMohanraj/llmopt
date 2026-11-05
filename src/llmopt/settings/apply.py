@@ -1,9 +1,3 @@
-"""Turn tunable settings into vLLM arguments and environment variables, strictly.
-
-A setting the adapter cannot apply is an error. It is never ignored, because an ignored
-setting makes every trial in a search identical and the result meaningless.
-"""
-
 from __future__ import annotations
 
 import os
@@ -14,11 +8,9 @@ from pydantic import BaseModel
 from llmopt.schemas import SettingValue
 from llmopt.settings.table import BY_NAME, validate_settings
 
-# Listed in the table, but vLLM 0.32.0 does not accept them (checked inside the pinned image).
 NOT_IN_PINNED_VLLM: dict[str, str] = {
     "calculate_kv_scales": "vLLM 0.32.0 has no calculate_kv_scales argument",
 }
-# Settings the adapters control themselves.
 SET_ELSEWHERE: dict[str, str] = {
     "enable_prefix_caching": (
         "the adapter keeps prefix caching off so repeated prompts do not flatter TTFT"
@@ -43,11 +35,6 @@ def _env_value(value: SettingValue) -> str:
 def apply_settings(
     values: dict[str, SettingValue], allowed: frozenset[str], engine_name: str
 ) -> Applied:
-    """Return LLM keyword arguments and environment variables for tunable settings.
-
-    Names in `allowed` are applied (or, for adapter-specific names, left to the adapter).
-    Any other name raises ValueError.
-    """
     problems = validate_settings({k: v for k, v in values.items() if k in BY_NAME})
     for name in values:
         if name in NOT_IN_PINNED_VLLM:
@@ -77,7 +64,6 @@ def apply_settings(
 
 
 def set_env(env: dict[str, str]) -> dict[str, str | None]:
-    """Set environment variables and return the previous values (None means it was unset)."""
     previous: dict[str, str | None] = {}
     for key, value in env.items():
         previous[key] = os.environ.get(key)

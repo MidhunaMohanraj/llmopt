@@ -1,5 +1,3 @@
-"""Save and load results as JSON: one file per trial, and one file for a whole report."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,7 +15,6 @@ def load_report(path: Path) -> Report:
 
 
 def trial_path(directory: Path, trial: TrialResult) -> Path:
-    """One file per config, named by the config's own short key."""
     suffix = f"-{trial.workload}" if trial.workload else ""
     return directory / f"{trial.config.key()}{suffix}.json"
 
@@ -34,7 +31,6 @@ def load_trial(path: Path) -> TrialResult:
 
 
 def load_trials(directory: Path) -> list[TrialResult]:
-    """Load every .json file in the folder, in file name order."""
     if not directory.is_dir():
         raise FileNotFoundError(f"results folder not found: {directory}")
     return [load_trial(path) for path in sorted(directory.glob("*.json"))]

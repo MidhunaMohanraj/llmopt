@@ -48,8 +48,6 @@ def make_trial(
 
 
 def evaluate(config: Config) -> TrialResult:
-    """Made-up response, not a measurement: 2048 seqs adds 50 tok/s, 16384 tokens
-    adds 20 tok/s and 30 ms of TTFT."""
     settings = config.settings
     throughput = 100.0
     ttft = 100.0
@@ -78,7 +76,6 @@ def test_finds_and_combines_winners() -> None:
     assert result.best.settings == {SEQS: 2048, TOKENS: 16384}
     assert rate(result.best) == pytest.approx(170.0)
     assert rate(result.baseline) == pytest.approx(100.0)
-    # baseline, four single values and the one combination
     assert len(result.evaluated) == 6
     assert not result.stopped_early
 

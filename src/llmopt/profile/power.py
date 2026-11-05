@@ -1,13 +1,3 @@
-"""Measure GPU energy by sampling power (watts) and integrating over time.
-
-DRAFT: NOT TESTED ON A GPU. The parser follows the AMD docs sample of the default
-`amd-smi` table (an MI300A), and the sampling interval has not been measured. Confirm
-both on a real MI300X before using any number from this module.
-
-The reading is whole-GPU power, idle draw included. Energy per token from it is
-"GPU energy for this run divided by tokens made", not the share of the model alone.
-"""
-
 from __future__ import annotations
 
 import re
@@ -18,7 +8,6 @@ from collections.abc import Callable
 
 from typing_extensions import Self
 
-# One row per GPU in the default view: starts with the PCI address, ends with "49 W |".
 _POWER_ROW = re.compile(
     r"^\|\s*[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.\d\s.*\s(\d+(?:\.\d+)?)\s*W\s*\|\s*$",
     re.MULTILINE,
@@ -26,12 +15,10 @@ _POWER_ROW = re.compile(
 
 
 def parse_power_watts(text: str) -> list[float]:
-    """Power in watts for each GPU row of the default `amd-smi` table, in table order."""
     return [float(value) for value in _POWER_ROW.findall(text)]
 
 
 def integrate_joules(samples: list[tuple[float, float]]) -> float:
-    """Trapezoid rule over (time in seconds, power in watts) samples."""
     if len(samples) < 2:
         raise ValueError("need at least 2 samples to integrate")
     total = 0.0
@@ -51,7 +38,6 @@ def energy_per_token_j(joules: float, tokens: int) -> float:
 
 
 def read_gpu_power_watts(gpu_index: int | None = None, timeout_s: float = 10.0) -> float:
-    """Run `amd-smi` once. Returns the sum over all GPUs, or one GPU if gpu_index is given."""
     try:
         completed = subprocess.run(
             ["amd-smi"], capture_output=True, text=True, check=True, timeout=timeout_s
@@ -73,8 +59,6 @@ def read_gpu_power_watts(gpu_index: int | None = None, timeout_s: float = 10.0) 
 
 
 class PowerSampler:
-    """Context manager that reads power in a thread and integrates it into joules."""
-
     def __init__(self, read_watts: Callable[[], float], interval_s: float = 0.5) -> None:
         self._read_watts = read_watts
         self._interval_s = interval_s

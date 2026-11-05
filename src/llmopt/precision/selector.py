@@ -1,5 +1,3 @@
-"""Decide which precisions and engine pairs are allowed on a GPU."""
-
 from __future__ import annotations
 
 import os
@@ -11,9 +9,7 @@ from pydantic import BaseModel
 from llmopt.schemas import Engine, Precision
 
 
-# Works when llmopt is installed with "pip install -e". The repo root is three levels up.
 def config_dir() -> Path:
-    """Folder with the YAML configs; LLMOPT_CONFIG_DIR overrides the default."""
     override = os.environ.get("LLMOPT_CONFIG_DIR")
     if override:
         return Path(override)
@@ -47,7 +43,6 @@ def supported_precisions(gfx_target: str) -> list[Precision]:
 
 
 def candidate_pairs(gfx_target: str) -> list[tuple[Engine, Precision]]:
-    """Every engine and precision pair that is allowed on this GPU."""
     allowed = set(supported_precisions(gfx_target))
     return [
         (engine, precision)

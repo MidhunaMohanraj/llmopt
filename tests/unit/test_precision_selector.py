@@ -34,7 +34,6 @@ def test_unknown_gpu_raises() -> None:
 
 
 def test_every_offered_precision_runs_on_some_engine() -> None:
-    # From the brief: each option runs on at least one engine.
     compat = load_compat()
     runnable = {p for plist in compat.values() for p in plist}
     for gfx, info in load_gpus().items():

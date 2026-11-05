@@ -67,8 +67,6 @@ class PyTorchCpuEngine(EngineAdapter):
         return [self._generate_one(req) for req in requests]
 
     def _generate_one(self, req: GenRequest) -> GenResult:
-        """Greedy decoding, one request at a time. EOS is ignored so every run makes
-        exactly max_new_tokens tokens and timings stay comparable."""
         import torch
 
         ids = build_prompt_ids(self._tokenizer, req.prompt_tokens)

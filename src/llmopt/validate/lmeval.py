@@ -1,5 +1,3 @@
-"""Accuracy on ARC-Easy through lm-eval, reading the local parquet files offline."""
-
 from __future__ import annotations
 
 import json
@@ -17,7 +15,6 @@ SPLITS = ("train", "validation", "test")
 
 
 def build_task_yaml(datasets_dir: Path) -> str:
-    """lm-eval task file: the built-in arc_easy prompt, with data read from local parquet."""
     arc_dir = datasets_dir / "ai2_arc" / "ARC-Easy"
     files = "\n".join(
         f"    {split}: {arc_dir / f'{split}-00000-of-00001.parquet'}" for split in SPLITS
@@ -84,7 +81,6 @@ def build_command(
 def accuracy_from_results(
     results: dict[str, Any], task: str = TASK_NAME, metric: str = "acc"
 ) -> float:
-    """Read one metric from an lm-eval results file (keys look like 'acc,none')."""
     task_results = results.get("results", {}).get(task)
     if task_results is None:
         raise KeyError(f"task {task!r} not found in lm-eval results")
@@ -95,7 +91,6 @@ def accuracy_from_results(
 
 
 def accuracy_result(score: float, baseline_score: float) -> AccuracyResult:
-    """Higher accuracy is better, so a positive drop_pct means the model got worse."""
     if baseline_score <= 0:
         raise ValueError("baseline_score must be positive")
     drop = (baseline_score - score) / baseline_score * 100
@@ -110,8 +105,6 @@ def run_arc_easy(
     limit: int | None = None,
     device: str = "cpu",
 ) -> float:
-    """Run ARC-Easy offline and return accuracy. Needs the 'eval' extras installed.
-    Use limit for smoke tests only; a limited score is not a real baseline."""
     with tempfile.TemporaryDirectory() as tmp:
         task_dir = Path(tmp) / "tasks"
         output_dir = Path(tmp) / "out"

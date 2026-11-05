@@ -1,5 +1,3 @@
-"""A pretend engine with adjustable behaviour, for tests that need no GPU."""
-
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -12,7 +10,6 @@ class FakeBehavior(BaseModel):
     ttft_base_ms: float = 80.0
     prefill_ms_per_token: float = 0.2
     tpot_ms: float = 12.0
-    # Lower factor means faster.
     speed_factor: dict[Precision, float] = Field(
         default_factory=lambda: {
             Precision.BF16: 1.0,
@@ -78,7 +75,6 @@ class FakeEngine(EngineAdapter):
     def teardown(self) -> None:
         self._config = None
 
-    # Helpers for tests. Real engines will not have these.
     def accuracy_drop_pct(self, precision: Precision) -> float:
         return self.behavior.accuracy_drop_pct[precision]
 

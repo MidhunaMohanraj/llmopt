@@ -16,8 +16,6 @@ needs_torch = pytest.mark.skipif(
 
 
 class RecordingModel:
-    """Predicts every token with equal probability and records where the input was."""
-
     def __init__(self) -> None:
         self.devices: list[str] = []
 

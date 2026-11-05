@@ -1,5 +1,3 @@
-"""Run an engine adapter several times and summarize latency, throughput and memory."""
-
 from __future__ import annotations
 
 import statistics
@@ -31,7 +29,6 @@ class ProfileResult(BaseModel):
 
 
 def percentile(values: Sequence[float], q: float) -> float:
-    """Percentile q (0 to 100) with linear interpolation between neighbours."""
     if not values:
         raise ValueError("percentile of an empty list")
     if not 0 <= q <= 100:
@@ -44,13 +41,6 @@ def percentile(values: Sequence[float], q: float) -> float:
 
 
 def run_metrics(results: list[GenResult], wall_ms: float | None = None) -> RunMetrics:
-    """Summarize one pass over the requests.
-
-    By default the requests ran one after another, so the time spent is the sum of
-    the request times. For concurrent requests pass wall_ms, the real elapsed time:
-    adding up overlapping request times would count the same seconds many times and
-    make throughput look too low.
-    """
     if not results:
         raise ValueError("no results to summarize")
     ttfts: list[float] = []
@@ -84,7 +74,6 @@ def run_metrics(results: list[GenResult], wall_ms: float | None = None) -> RunMe
 
 
 def spread_pct(values: Sequence[float]) -> float:
-    """(max - min) / median, in percent."""
     if not values:
         raise ValueError("spread of an empty list")
     middle = statistics.median(values)
@@ -94,7 +83,6 @@ def spread_pct(values: Sequence[float]) -> float:
 
 
 def aggregate_runs(runs: list[RunMetrics], peak_memory_bytes: int) -> Metrics:
-    """Median of every metric across runs; spread is the worst of TTFT, TPOT, throughput."""
     spread = max(
         spread_pct([r.ttft_ms_p50 for r in runs]),
         spread_pct([r.tpot_ms for r in runs]),
@@ -113,7 +101,6 @@ def aggregate_runs(runs: list[RunMetrics], peak_memory_bytes: int) -> Metrics:
 
 
 def check_concurrency(engine: EngineAdapter, concurrency: int, request_count: int) -> None:
-    """Refuse a concurrency level that this engine or request count cannot honour."""
     if concurrency < 1:
         raise ValueError(f"concurrency must be at least 1, got {concurrency}")
     if concurrency == 1:
@@ -136,8 +123,6 @@ def _generate_pass(
     concurrency: int,
     clock: Callable[[], float],
 ) -> tuple[list[GenResult], float | None]:
-    """One pass over all requests. Returns the results and, for concurrent runs,
-    the real elapsed time in ms (None means: use the sum of request times)."""
     if concurrency == 1:
         return engine.generate(requests), None
     results: list[GenResult] = []
@@ -160,14 +145,6 @@ def profile_engine(
     concurrency: int = 1,
     clock: Callable[[], float] = time.perf_counter,
 ) -> ProfileResult:
-    """Profile a prepared engine. The caller prepares and tears down the engine.
-
-    Order: one discarded warm-up pass, `runs` timed passes, then one extra pass
-    during which memory is sampled (its timings are not used).
-    With concurrency above 1 the requests are sent in waves of that size, one
-    generate() call per wave, and throughput uses the real elapsed time.
-    peak_memory_gb holds GiB (2**30 bytes).
-    """
     if runs < 2:
         raise ValueError("runs must be at least 2 to measure stability")
     if not requests:

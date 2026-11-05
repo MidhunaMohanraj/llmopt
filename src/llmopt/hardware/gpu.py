@@ -1,9 +1,3 @@
-"""Read the GPUs on this machine with rocminfo and amd-smi.
-
-Problems become notes in the report; nothing here raises. Never run on real hardware yet:
-the parsers have only seen AMD documentation samples.
-"""
-
 from __future__ import annotations
 
 import shutil

@@ -1,5 +1,3 @@
-"""Fixed-grid check for the settings search, and the saved optimize report."""
-
 from __future__ import annotations
 
 import itertools
@@ -19,7 +17,6 @@ GRID_LIMIT_PCT = 5.0
 class GridCheck(BaseModel):
     points: int
     grid_best: Evaluated | None
-    # How far the tuner's best is behind the grid's best; negative means it is ahead.
     gap_pct: float | None
     within_limit: bool
     limit_pct: float
@@ -38,8 +35,6 @@ def grid_points(
     candidates: dict[str, list[SettingValue]],
     max_points: int,
 ) -> list[dict[str, SettingValue]]:
-    """Every combination of the candidate values. Each axis starts with the value in
-    base (or 'not set'), so the starting config is one of the points."""
     if max_points < 1:
         raise ValueError(f"max_grid must be at least 1, got {max_points}")
     names = list(candidates)
@@ -71,7 +66,6 @@ def run_grid(
     objective: Objective,
     points: list[dict[str, SettingValue]],
 ) -> list[Evaluated]:
-    """Measure every grid point."""
     results: list[Evaluated] = []
     for settings in points:
         trial = evaluate(config.model_copy(update={"settings": dict(settings)}))
@@ -98,7 +92,6 @@ def compare_to_grid(
     objective: Objective,
     limit_pct: float = GRID_LIMIT_PCT,
 ) -> GridCheck:
-    """Is the tuner's best within limit_pct of the best usable grid point?"""
     field, higher = METRICS[objective.optimize]
     usable = [item for item in grid if item.feasible]
     if not usable:

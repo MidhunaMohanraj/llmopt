@@ -18,8 +18,6 @@ real_run_bench = run_bench
 
 
 class ScriptedEngine(EngineAdapter):
-    """Test double with made-up timings. Never use its numbers as a benchmark."""
-
     name = "scripted"
 
     def __init__(self, fail: bool = False) -> None:

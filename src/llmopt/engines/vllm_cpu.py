@@ -1,5 +1,3 @@
-"""vLLM engine adapter that runs on CPU (Phase 1, main engine on the bench PC)."""
-
 from __future__ import annotations
 
 import gc
@@ -13,7 +11,6 @@ from llmopt.engines.pytorch_cpu import build_prompt_ids
 from llmopt.schemas import Config, Engine, HardwareProfile, Precision
 from llmopt.settings.apply import apply_settings
 
-# Settings this adapter applies: its own two, plus the vLLM settings that work on CPU.
 CPU_SETTINGS = frozenset(
     {
         "max_model_len",
@@ -42,11 +39,6 @@ def run_request(
     request_id: str,
     new_tokens: int,
 ) -> GenResult:
-    """Run one request through the vLLM step loop and time every output token.
-
-    The clock starts just before add_request. If one step returns several new tokens,
-    they share that step's time, because they cannot be told apart.
-    """
     times: list[float] = []
     text = ""
     start = time.perf_counter()
@@ -67,11 +59,6 @@ def run_request(
 def run_batch(
     engine: Any, items: list[tuple[Any, list[int], str, str, int]]
 ) -> list[GenResult]:
-    """Run several requests at the same time through the vLLM step loop.
-
-    Each item is (params, prompt_ids, vllm_id, request_id, new_tokens). All requests
-    are added before the first step, and every token is timed from that one start.
-    """
     times: dict[str, list[float]] = {item[2]: [] for item in items}
     texts: dict[str, str] = {item[2]: "" for item in items}
     start = time.perf_counter()
@@ -136,7 +123,6 @@ class VllmCpuEngine(EngineAdapter):
         from vllm import LLM, SamplingParams
 
         self._tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True)
-        # Prefix caching is off so repeated prompts do not make TTFT look faster than it is.
         llm: Any = LLM(
             model=str(path),
             dtype="bfloat16",
@@ -163,8 +149,6 @@ class VllmCpuEngine(EngineAdapter):
         )
 
     def generate(self, requests: list[GenRequest]) -> list[GenResult]:
-        """Run the requests one at a time (concurrency 1). EOS is ignored so every
-        request makes exactly max_new_tokens tokens."""
         if self._llm is None or self._tokenizer is None:
             raise RuntimeError("call prepare() before generate()")
         results: list[GenResult] = []
@@ -189,7 +173,6 @@ class VllmCpuEngine(EngineAdapter):
         return results
 
     def generate_batch(self, requests: list[GenRequest]) -> list[GenResult]:
-        """Run all the requests at the same time and let vLLM batch them."""
         if self._llm is None or self._tokenizer is None:
             raise RuntimeError("call prepare() before generate_batch()")
         items: list[tuple[Any, list[int], str, str, int]] = []

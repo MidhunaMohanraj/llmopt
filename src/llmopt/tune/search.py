@@ -1,5 +1,3 @@
-"""Search over vLLM settings: one at a time, then combine the winners."""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -10,7 +8,6 @@ from llmopt.schemas import Config, Objective, SettingValue, Status, TrialResult
 from llmopt.settings.apply import NOT_IN_PINNED_VLLM, SET_ELSEWHERE
 from llmopt.settings.table import BY_NAME, Setting, validate_settings
 
-# What each optimize name means: the Metrics field, and whether higher is better.
 METRICS: dict[str, tuple[str, bool]] = {
     "throughput": ("throughput_tps", True),
     "ttft": ("ttft_ms_p95", False),
@@ -21,8 +18,6 @@ METRICS: dict[str, tuple[str, bool]] = {
 
 
 class Evaluated(BaseModel):
-    """One measured config. problem is None when it is usable under the objective."""
-
     settings: dict[str, SettingValue]
     trial: TrialResult
     problem: str | None = None
@@ -41,7 +36,6 @@ class SearchResult(BaseModel):
 
 
 def feasibility_problem(trial: TrialResult, objective: Objective) -> str | None:
-    """Why this trial cannot be used under the objective, or None if it can."""
     if trial.status is not Status.OK or trial.metrics is None:
         return f"trial {trial.status.value}: {trial.reason or 'no metrics'}"
     limit = objective.max_ttft_p95_ms
@@ -73,7 +67,6 @@ def _value(evaluated: Evaluated, name: str) -> float:
 
 
 def _signed(evaluated: Evaluated, name: str) -> float:
-    """Bigger is always better, whichever way the metric points."""
     value = _value(evaluated, name)
     return value if _metric(name)[1] else -value
 
@@ -81,7 +74,6 @@ def _signed(evaluated: Evaluated, name: str) -> float:
 def better(
     candidate: Evaluated, incumbent: Evaluated, name: str, min_gain_pct: float
 ) -> bool:
-    """True if candidate is usable and beats incumbent by more than min_gain_pct."""
     if not candidate.feasible:
         return False
     if not incumbent.feasible:
@@ -94,7 +86,6 @@ def better(
 
 
 def candidate_values(setting: Setting) -> list[SettingValue]:
-    """Values worth trying for one setting, other than its default."""
     default = setting.default
     options: list[SettingValue]
     if setting.kind == "bool":
@@ -123,7 +114,6 @@ def candidate_values(setting: Setting) -> list[SettingValue]:
 
 
 def default_candidates(names: list[str] | None = None) -> dict[str, list[SettingValue]]:
-    """Candidate values for the named settings, or for every known setting."""
     refused = set(NOT_IN_PINNED_VLLM) | set(SET_ELSEWHERE)
     chosen = names if names is not None else [n for n in BY_NAME if n not in refused]
     result: dict[str, list[SettingValue]] = {}
@@ -151,7 +141,6 @@ def _dominates(a: Evaluated, b: Evaluated) -> bool:
 
 
 def pareto_front(evaluated: list[Evaluated]) -> list[Evaluated]:
-    """Usable results that no other result beats on both throughput and TTFT p95."""
     points = [item for item in evaluated if item.feasible and item.trial.metrics is not None]
     front = [
         item
@@ -170,7 +159,6 @@ def run_search(
     max_trials: int = 40,
     min_gain_pct: float = 2.0,
 ) -> SearchResult:
-    """One setting at a time, then combine the winners, dropping any that clash."""
     name = objective.optimize
     _metric(name)
     if max_trials < 1:

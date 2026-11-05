@@ -1,5 +1,3 @@
-"""Measure the memory of a process and of the processes it started."""
-
 from __future__ import annotations
 
 import os
@@ -37,11 +35,6 @@ def _memory_bytes(pid: int) -> int:
 
 
 def process_tree_memory_bytes(root_pid: int | None = None) -> int:
-    """Memory of a process plus all its descendants, in bytes (Linux only).
-
-    Uses proportional set size (PSS) so memory shared between processes is not
-    counted twice. If PSS cannot be read, it falls back to resident size (RSS).
-    """
     root = os.getpid() if root_pid is None else root_pid
     children = _children_map()
     stack = [root]
@@ -58,8 +51,6 @@ def process_tree_memory_bytes(root_pid: int | None = None) -> int:
 
 
 class PeakMemoryMonitor:
-    """Context manager that samples memory in a thread and keeps the highest value."""
-
     def __init__(self, read_bytes: Callable[[], int], interval_s: float = 0.2) -> None:
         self._read_bytes = read_bytes
         self._interval_s = interval_s

@@ -1,5 +1,3 @@
-"""Run one config through an engine adapter and the profiler, and return a TrialResult."""
-
 from __future__ import annotations
 
 import time
@@ -33,7 +31,6 @@ def run_bench(
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
     clock: Callable[[], float] = time.perf_counter,
 ) -> TrialResult:
-    """Prepare the engine, profile it, tear it down. A crash gives a FAILED trial."""
     check_concurrency(engine, workload.concurrency, workload.num_requests)
     if runs < 2:
         raise ValueError(f"runs must be at least 2 to measure stability, got {runs}")

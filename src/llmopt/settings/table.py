@@ -1,10 +1,3 @@
-"""Tunable vLLM settings from AMD's vLLM V1 optimization guide (single GPU only).
-
-Source: https://rocm.docs.amd.com/en/latest/how-to/rocm-for-ai/inference-optimization/vllm-optimization.html
-Every entry is verified=False: names and defaults come from that guide, not from a run on
-vllm 0.32.0 and a GPU. Multi-GPU settings (parallelism, RCCL) are Phase 2 and excluded.
-"""
-
 from __future__ import annotations
 
 import json
@@ -130,7 +123,6 @@ def _check(setting: Setting, value: SettingValue) -> str | None:
 
 
 def validate_settings(values: dict[str, SettingValue]) -> list[str]:
-    """Return a list of problems; empty means every setting is known and in range."""
     errors: list[str] = []
     for name, value in values.items():
         setting = BY_NAME.get(name)
@@ -144,7 +136,6 @@ def validate_settings(values: dict[str, SettingValue]) -> list[str]:
 
 
 def render_settings(values: dict[str, SettingValue]) -> Rendered:
-    """Turn validated settings into vllm arguments and environment variables."""
     errors = validate_settings(values)
     if errors:
         raise ValueError("; ".join(errors))

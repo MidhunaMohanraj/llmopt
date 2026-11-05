@@ -1,9 +1,3 @@
-"""A faster setup that loses too much accuracy must not be chosen (Gate G2 mechanics).
-
-These tests use a stand-in runner, so they prove the search logic only. They say nothing
-about real accuracy on any model or GPU.
-"""
-
 from llmopt.schemas import (
     AccuracyResult,
     Config,
@@ -24,7 +18,6 @@ BAD_DROP_PCT = 3.0
 
 
 def runner(config: Config) -> TrialResult:
-    """2048 sequences is twice as fast but loses 3% accuracy; the rest match the baseline."""
     bad = config.settings.get(SEQS) == 2048
     metrics = Metrics(
         ttft_ms_p50=40.0,

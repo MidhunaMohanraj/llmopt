@@ -1,5 +1,3 @@
-"""Tests for the PyTorch CPU adapter that need no model files."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,7 +15,6 @@ class _StubTokenizer:
 
 
 def _hardware() -> HardwareProfile:
-    # Placeholder values. The adapter ignores the hardware profile.
     return HardwareProfile(
         gpu_name="none",
         gfx_target="none",

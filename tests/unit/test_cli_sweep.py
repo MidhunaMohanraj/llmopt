@@ -28,8 +28,6 @@ class FakeClock:
 
 
 class WaveEngine(EngineAdapter):
-    """Pretend engine with made-up timings. Never use its numbers as a benchmark."""
-
     name = "wave"
 
     def __init__(self, clock: FakeClock, concurrent: bool = True) -> None:

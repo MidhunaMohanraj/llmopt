@@ -1,5 +1,3 @@
-"""Tests for the vLLM CPU adapter that need neither vLLM nor model files."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -26,8 +24,6 @@ class _Out:
 
 
 class _StubEngine:
-    """Gives one more token per step, like the vLLM step loop with CUMULATIVE output."""
-
     def __init__(self, target: int, with_other_request: bool = False) -> None:
         self.target = target
         self.with_other_request = with_other_request
@@ -51,7 +47,6 @@ class _StubEngine:
 
 
 def _hardware() -> HardwareProfile:
-    # Placeholder values. The adapter ignores the hardware profile.
     return HardwareProfile(
         gpu_name="none",
         gfx_target="none",
