@@ -188,6 +188,8 @@ TASKS = {"ppl": "wikitext2_perplexity", "arc": "arc_easy_local"}
 def _score(
     task: str, model: Path, datasets: Path, limit: int | None, device: str
 ) -> float:
+    if not model.is_dir():
+        raise FileNotFoundError(f"model folder not found: {model}")
     if task == "arc":
         from llmopt.validate.lmeval import run_arc_easy
 

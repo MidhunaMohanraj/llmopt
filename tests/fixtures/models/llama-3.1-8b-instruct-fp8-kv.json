@@ -1,5 +1,4 @@
 {
-  "_name_or_path": "/group/ossmodelzoo/quark_torch/huggingface_pretrained_models/meta-llama/Meta-Llama-3.1-8B-Instruct",
   "architectures": [
     "LlamaForCausalLM"
   ],
