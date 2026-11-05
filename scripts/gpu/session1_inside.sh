@@ -26,6 +26,8 @@ finish() {
   exit $?
 }
 
+passed() { grep -q "^RESULT $1: OK" "$RES"; }
+
 # Run a tool, save ALL its output to a file, show the top, and keep the tool's own exit code.
 capture() {
   local name="$1" file="$2"; shift 2
@@ -86,12 +88,14 @@ capture amd-smi-static /out/amd_smi_static.txt amd-smi static
 capture amd-smi-default /out/amd_smi_default.txt amd-smi
 step parse-real-output python3 /work/scripts/gpu/check_parsers.py /out
 step torch-sees-gpu python3 -c "import torch; print('torch', torch.__version__, 'hip', torch.version.hip, 'gpu', torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+passed torch-sees-gpu || { echo "torch cannot see a GPU: stopping before the model and server steps"; finish; }
 
 if [ ! -f "$MODEL/config.json" ]; then
   step fetch-model python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3-8B', local_dir='$MODEL')"
   [ -f "$MODEL/config.json" ] || { echo "model still missing, stopping"; finish; }
 fi
 step model-check check_model
+passed model-check || { echo "model check failed: stopping before the server"; finish; }
 
 if [ "${SKIP_SERVE:-0}" = "1" ]; then
   echo "SKIP_SERVE=1: not starting vLLM"
