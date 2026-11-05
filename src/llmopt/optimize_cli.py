@@ -1,5 +1,3 @@
-"""The optimize command: search settings for the best result under the objective."""
-
 from pathlib import Path
 from typing import Annotated
 
@@ -61,7 +59,6 @@ def optimize_cmd(
         candidates = default_candidates(names or None)
         target = Objective(optimize=objective, max_ttft_p95_ms=max_ttft_p95_ms)
         workload = get_workload(workload_name)
-        # Check the grid size first, so a too-big grid fails before any run.
         points = grid_points(config.settings, candidates, max_grid) if check_grid else []
         cache: dict[str, TrialResult] = {}
 

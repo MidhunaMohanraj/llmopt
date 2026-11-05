@@ -1,5 +1,3 @@
-"""The contract every engine adapter follows."""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -22,7 +20,6 @@ class GenRequest(BaseModel):
 
 class GenResult(BaseModel):
     request_id: str
-    # Time of each output token, in ms since the request started.
     token_times_ms: list[float]
     text: str = ""
 
@@ -37,27 +34,23 @@ class GenResult(BaseModel):
 
 class EngineAdapter(ABC):
     name: str
-    # True only if generate_batch() really runs the requests it is given at the same time.
-    # Engines that loop over the requests one by one must leave this False.
     supports_concurrency: bool = False
 
     @abstractmethod
     def supports(self, hardware: HardwareProfile, model: str, precision: Precision) -> SupportResult:
-        """Can this engine run this case? If not, say why."""
+        ...
 
     @abstractmethod
     def prepare(self, config: Config) -> None:
-        """Start the engine with the given settings."""
+        ...
 
     @abstractmethod
     def generate(self, requests: list[GenRequest]) -> list[GenResult]:
-        """Run the requests one after another and return per-token timings and outputs."""
+        ...
 
     def generate_batch(self, requests: list[GenRequest]) -> list[GenResult]:
-        """Run the requests at the same time. Engines that cannot do this keep the
-        default, which runs them one after another."""
         return self.generate(requests)
 
     @abstractmethod
     def teardown(self) -> None:
-        """Stop the engine and free GPU memory."""
+        ...

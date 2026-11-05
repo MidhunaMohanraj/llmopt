@@ -17,9 +17,6 @@ TOKENS = "max_num_batched_tokens"
 
 
 def use_fake(monkeypatch: pytest.MonkeyPatch, fail: bool = False) -> None:
-    """Made-up response, not a measurement: 2048 seqs adds 50 tok/s, 16384 tokens
-    adds 20 tok/s and 30 ms of TTFT."""
-
     def fake_make_engine(name: str) -> object:
         return object()
 

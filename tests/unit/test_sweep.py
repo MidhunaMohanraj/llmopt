@@ -31,9 +31,6 @@ class FakeClock:
 
 
 class WaveEngine(EngineAdapter):
-    """Pretend engine, not a real one: every request takes 1000 ms, a call takes
-    1 s when requests overlap and 1 s per request when they do not."""
-
     name = "wave"
 
     def __init__(self, clock: FakeClock, concurrent: bool = True, fail: bool = False) -> None:

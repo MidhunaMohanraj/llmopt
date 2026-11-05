@@ -1,5 +1,3 @@
-"""Turn a Report into one self-contained HTML page."""
-
 from __future__ import annotations
 
 from html import escape

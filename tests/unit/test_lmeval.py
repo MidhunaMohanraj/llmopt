@@ -12,7 +12,6 @@ from llmopt.validate.lmeval import (
     build_task_yaml,
 )
 
-# Same shape as a real lm-eval 0.4.13 results file.
 SAMPLE = {
     "results": {
         TASK_NAME: {

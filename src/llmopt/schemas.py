@@ -1,5 +1,3 @@
-"""Data models shared by every part of llmopt."""
-
 from __future__ import annotations
 
 import hashlib
@@ -56,8 +54,6 @@ class Workload(BaseModel):
 
 
 class Objective(BaseModel):
-    """Hard limits plus the one thing to improve."""
-
     max_ttft_p95_ms: float | None = Field(default=None, gt=0)
     max_accuracy_drop_pct: float | None = Field(default=None, ge=0)
     optimize: str = "throughput"
@@ -71,7 +67,6 @@ class Config(BaseModel):
     settings: dict[str, SettingValue] = Field(default_factory=dict)
 
     def key(self) -> str:
-        """Short stable id for this config, used to cache results."""
         text = json.dumps(self.model_dump(mode="json"), sort_keys=True)
         return hashlib.sha256(text.encode()).hexdigest()[:16]
 

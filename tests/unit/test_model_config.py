@@ -1,5 +1,3 @@
-"""Tests for reading Hugging Face configs and estimating model memory."""
-
 from __future__ import annotations
 
 import json
@@ -19,7 +17,6 @@ from llmopt.models.config import (
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "models"
 
-# Totals from the safetensors index of each model (BF16 weights, in bytes).
 LLAMA_8B_BYTES = 16_060_522_496
 QWEN3_8B_BYTES = 16_381_470_720
 

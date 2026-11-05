@@ -100,7 +100,6 @@ def _trial_summary(trial: TrialResult) -> str:
 
 
 def _check_vllm_context(engine: str, settings: dict[str, Any], workload: Workload) -> None:
-    """vLLM rejects requests longer than max_model_len; say so before loading the model."""
     if engine not in ("vllm", "vllm-rocm"):
         return
     limit = settings.get("max_model_len", 2048)
@@ -186,7 +185,6 @@ TASKS = {"ppl": "wikitext2_perplexity", "arc": "arc_easy_local"}
 
 
 def _score(task: str, model: Path, datasets: Path, limit: int | None) -> float:
-    """Run the real scorer. Needs torch and transformers (ppl) or lm_eval (arc)."""
     if task == "arc":
         from llmopt.validate.lmeval import run_arc_easy
 

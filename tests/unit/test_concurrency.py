@@ -15,8 +15,6 @@ TIMES = [250.0, 500.0, 750.0, 1000.0]
 
 
 class FakeClock:
-    """A clock the test engine moves by hand."""
-
     def __init__(self) -> None:
         self.now = 0.0
 
@@ -25,10 +23,6 @@ class FakeClock:
 
 
 class WaveEngine(EngineAdapter):
-    """Pretend engine, not a real one. Every request takes 1000 ms. Requests in one
-    call overlap if concurrent is True (the call takes 1 s), otherwise they run in
-    turn (the call takes 1 s per request)."""
-
     name = "wave"
 
     def __init__(self, clock: FakeClock, concurrent: bool = True) -> None:
@@ -86,7 +80,6 @@ def test_profile_engine_sends_waves_and_uses_wall_time() -> None:
         concurrency=4,
         clock=clock,
     )
-    # warm-up, 2 timed runs and the memory pass: 4 passes of 2 waves each
     assert engine.batch_sizes == [4] * 8
     assert result.metrics.throughput_tps == pytest.approx(16.0)
     assert result.metrics.tpot_ms == pytest.approx(250.0)

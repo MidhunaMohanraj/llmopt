@@ -1,5 +1,3 @@
-"""Perplexity on WikiText-2: how well a model predicts held-out text (lower is better)."""
-
 from __future__ import annotations
 
 import importlib
@@ -22,14 +20,12 @@ class PerplexityResult(BaseModel):
 
 
 def perplexity_from_nll(total_nll: float, token_count: int) -> float:
-    """Perplexity is exp of the average negative log-likelihood per token."""
     if token_count <= 0:
         raise ValueError("token_count must be positive")
     return math.exp(total_nll / token_count)
 
 
 def load_wikitext_texts(path: Path) -> list[str]:
-    """Read the 'text' column of a WikiText parquet file."""
     parquet = importlib.import_module("pyarrow.parquet")
     table = parquet.read_table(path, columns=["text"])
     texts: list[str] = table.column("text").to_pylist()
@@ -37,7 +33,6 @@ def load_wikitext_texts(path: Path) -> list[str]:
 
 
 def check_device(device: str) -> None:
-    """Accept 'cpu', 'cuda' or 'cuda:N'. ROCm builds of torch call AMD GPUs 'cuda'."""
     name, colon, index = device.partition(":")
     valid = (name == "cpu" and not colon) or (
         name == "cuda" and (not colon or index.isdigit())
@@ -54,11 +49,6 @@ def evaluate_perplexity(
     max_windows: int = 20,
     device: str = "cpu",
 ) -> PerplexityResult:
-    """Score up to max_windows non-overlapping windows of window_tokens tokens.
-
-    The caller moves the model to `device`; the input windows are placed there too.
-    Only the CPU path is tested. The GPU path is untested.
-    """
     import torch
 
     if window_tokens < 2:
@@ -66,7 +56,6 @@ def evaluate_perplexity(
     if max_windows < 1:
         raise ValueError(f"max_windows must be at least 1, got {max_windows}")
     check_device(device)
-    # Cut the text first so we do not tokenize the whole corpus for a small sample.
     text = "\n\n".join(texts)[: window_tokens * max_windows * 8]
     ids: list[int] = tokenizer.encode(text, add_special_tokens=False)
     windows = min(max_windows, len(ids) // window_tokens)
@@ -95,8 +84,6 @@ def evaluate_perplexity(
 
 
 def perplexity_accuracy(score: float, baseline_score: float) -> AccuracyResult:
-    """Compare against a baseline. Lower perplexity is better, so a positive drop_pct
-    means the model got worse and a negative one means it got better."""
     if baseline_score <= 0:
         raise ValueError("baseline_score must be positive")
     drop = (score - baseline_score) / baseline_score * 100

@@ -1,5 +1,3 @@
-"""Build an engine adapter and its Config from simple command-line values."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,7 +21,6 @@ def _coerce(text: str) -> SettingValue:
 
 
 def parse_settings(text: str) -> dict[str, SettingValue]:
-    """Parse 'a=1,b=true,c=name' into typed values. Empty text gives no settings."""
     settings: dict[str, SettingValue] = {}
     for part in text.split(","):
         item = part.strip()
@@ -41,7 +38,6 @@ def _unknown_engine(engine: str) -> ValueError:
 
 
 def parse_precision(text: str) -> Precision:
-    """Turn 'bf16' or 'fp8' into a Precision, with a clear error for anything else."""
     try:
         return Precision(text.strip().lower())
     except ValueError:
@@ -79,7 +75,6 @@ def make_config(
 
 
 def make_engine(engine: str) -> EngineAdapter:
-    """Create the adapter. Imports are inside so the CLI starts fast."""
     if engine == "pytorch":
         from llmopt.engines.pytorch_cpu import PyTorchCpuEngine
 

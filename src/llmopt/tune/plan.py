@@ -1,14 +1,9 @@
-"""Which adapters can run each engine and precision pair."""
-
 from __future__ import annotations
 
 from pydantic import BaseModel
 
 from llmopt.schemas import Engine, Precision
 
-# Adapter names are the values accepted by `llmopt bench --engine`.
-# The CPU adapters run on the bench PC. The ROCm adapters are drafts: they have never run
-# on a GPU.
 ADAPTERS: dict[tuple[Engine, Precision], tuple[str, ...]] = {
     (Engine.PYTORCH, Precision.BF16): ("pytorch", "pytorch-rocm"),
     (Engine.VLLM, Precision.BF16): ("vllm", "vllm-rocm"),

@@ -120,7 +120,6 @@ def estimate_weight_bytes(counts: ParameterCount, weight_format: ValueFormat) ->
 def kv_cache_bytes(
     cfg: ModelConfig, tokens: int, kv_format: ValueFormat = "bf16", batch: int = 1
 ) -> int:
-    """KV-cache memory: keys and values for every layer, for tokens x batch."""
     per_token = 2 * cfg.num_layers * cfg.num_kv_heads * cfg.head_dim * BYTES_PER_VALUE[kv_format]
     return per_token * tokens * batch
 
@@ -139,12 +138,10 @@ class MemoryComparison(BaseModel):
 
     @property
     def estimate_is_lower_bound(self) -> bool:
-        """True when the measured peak is at least the estimate, as expected."""
         return self.measured_peak_bytes >= self.estimated_bytes
 
 
 def compare_with_measured(estimated_bytes: int, measured_peak_bytes: int) -> MemoryComparison:
-    """Compare estimated weights + KV cache with a measured peak. Overheads sit in the gap."""
     return MemoryComparison(
         estimated_bytes=estimated_bytes, measured_peak_bytes=measured_peak_bytes
     )

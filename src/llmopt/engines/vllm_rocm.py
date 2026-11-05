@@ -1,11 +1,3 @@
-"""vLLM adapter for AMD GPUs (ROCm).
-
-DRAFT: NOT TESTED ON A GPU. Argument names were checked against vLLM 0.32.0 inside the pinned
-image (no GPU needed for that). FP8 and FP8 KV cache behaviour on ROCm (including the FNUZ
-variant on gfx942) and the effect of every tunable setting must be confirmed on a real MI300X
-before any number from this adapter is used.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,7 +11,6 @@ from llmopt.settings.apply import apply_settings, restore_env, set_env
 
 SUPPORTED_PRECISIONS = (Precision.BF16, Precision.FP8)
 SUPPORTED_KV_DTYPES = ("auto", "fp8")
-# Settings this adapter handles: its own three, plus the tunable vLLM settings.
 ROCM_SETTINGS = frozenset(
     {
         "max_model_len",
@@ -48,7 +39,6 @@ def _float_setting(config: Config, key: str, default: float) -> float:
 
 
 def check_config(config: Config) -> None:
-    """Reject configs this adapter cannot run, before anything is loaded."""
     if config.engine is not Engine.VLLM:
         raise ValueError(f"vllm adapter needs engine=vllm, got {config.engine.value}")
     if config.precision not in SUPPORTED_PRECISIONS:
@@ -66,7 +56,6 @@ def check_config(config: Config) -> None:
 
 
 def build_llm_kwargs(config: Config) -> dict[str, Any]:
-    """Arguments for vllm.LLM. Prefix caching is off so TTFT is not flattered."""
     kwargs: dict[str, Any] = {
         "model": config.model,
         "dtype": "bfloat16",
@@ -82,7 +71,6 @@ def build_llm_kwargs(config: Config) -> dict[str, Any]:
 
 
 def build_env(config: Config) -> dict[str, str]:
-    """Environment variables to set before vLLM starts."""
     return apply_settings(config.settings, ROCM_SETTINGS, "vllm-rocm").env
 
 

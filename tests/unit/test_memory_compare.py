@@ -1,5 +1,3 @@
-"""Tests for comparing a memory estimate with a measured peak."""
-
 from __future__ import annotations
 
 import pytest

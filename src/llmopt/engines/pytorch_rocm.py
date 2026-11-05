@@ -1,10 +1,3 @@
-"""PyTorch adapter for AMD GPUs (ROCm).
-
-DRAFT: NOT TESTED ON A GPU. Only the config checks and the no-GPU error are tested, on a
-CPU machine. Timings, memory and the device move must be confirmed on a real MI300X before
-any number from this adapter is used. The num_threads setting is ignored here.
-"""
-
 from __future__ import annotations
 
 import time
@@ -15,12 +8,10 @@ from llmopt.engines.base import GenRequest, GenResult
 from llmopt.engines.pytorch_cpu import PyTorchCpuEngine, build_prompt_ids
 from llmopt.schemas import Config, Engine, Precision
 
-# ROCm builds of torch call AMD GPUs "cuda".
 DEVICE = "cuda"
 
 
 def check_config(config: Config) -> None:
-    """Reject configs this adapter cannot run, before anything is loaded."""
     if config.engine is not Engine.PYTORCH:
         raise ValueError(f"pytorch adapter needs engine=pytorch, got {config.engine.value}")
     if config.precision is not Precision.BF16:
@@ -52,8 +43,6 @@ class PyTorchRocmEngine(PyTorchCpuEngine):
         self._model = model
 
     def _generate_one(self, req: GenRequest) -> GenResult:
-        """Greedy decoding on the GPU, one request at a time. Reading the token with
-        .item() waits for the GPU, so every timestamp includes the finished step."""
         import torch
 
         ids = build_prompt_ids(self._tokenizer, req.prompt_tokens)

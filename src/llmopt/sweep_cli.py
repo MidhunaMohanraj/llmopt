@@ -1,5 +1,3 @@
-"""The sweep command: one config at several concurrency levels."""
-
 from pathlib import Path
 from typing import Annotated
 

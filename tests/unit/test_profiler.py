@@ -10,8 +10,6 @@ from llmopt.schemas import Config, HardwareProfile, Precision
 
 
 class ScriptedEngine(EngineAdapter):
-    """Returns the given token timings for each call, in order (not a real engine)."""
-
     name = "scripted"
 
     def __init__(self, scripts: list[list[float]]) -> None:

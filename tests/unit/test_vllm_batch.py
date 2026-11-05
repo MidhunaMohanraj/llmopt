@@ -1,5 +1,3 @@
-"""Tests for concurrent vLLM requests. A stub replaces the vLLM step loop."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,8 +25,6 @@ class _Out:
 
 
 class _BatchStub:
-    """Gives every unfinished request one more token per step, like vLLM batching."""
-
     def __init__(self, targets: dict[str, int]) -> None:
         self.targets = targets
         self.made: dict[str, int] = {}
