@@ -10,6 +10,7 @@ from llmopt.optimize_cli import optimize_cmd
 from llmopt.precision.selector import candidate_pairs
 from llmopt.profile.bench import run_bench
 from llmopt.profile.factory import make_config, make_engine, parse_settings
+from llmopt.profile.power import read_gpu_power_watts
 from llmopt.profile.workloads import get_workload
 from llmopt.report.render import write_report
 from llmopt.report.store import load_report, load_trial, load_trials, save_trial
@@ -113,6 +114,15 @@ def _check_vllm_context(engine: str, settings: dict[str, Any], workload: Workloa
         )
 
 
+def _check_power(power: bool) -> None:
+    if not power:
+        return
+    try:
+        read_gpu_power_watts()
+    except RuntimeError as error:
+        raise ValueError(f"--power needs a working amd-smi: {error}") from error
+
+
 @app.command("bench")
 def bench_cmd(
     engine: Annotated[
@@ -145,6 +155,9 @@ def bench_cmd(
     kv_cache_dtype: Annotated[
         str, typer.Option("--kv-cache-dtype", help="KV cache type: auto or fp8.")
     ] = "auto",
+    power: Annotated[
+        bool, typer.Option("--power", help="Measure energy per token with amd-smi.")
+    ] = False,
 ) -> None:
     """Run one config through the profiler and save the trial."""
     try:
@@ -158,7 +171,14 @@ def bench_cmd(
             num_requests=num_requests or base.num_requests,
         )
         _check_vllm_context(engine, parsed, workload)
-        trial = run_bench(make_engine(engine), config, workload, runs=runs)
+        _check_power(power)
+        trial = run_bench(
+            make_engine(engine),
+            config,
+            workload,
+            runs=runs,
+            read_power_watts=read_gpu_power_watts if power else None,
+        )
     except ValueError as error:
         typer.echo(f"error: {error}", err=True)
         raise typer.Exit(code=1) from error
