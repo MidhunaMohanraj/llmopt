@@ -1,7 +1,7 @@
-# Keyed by gfx target. These are the precisions the hardware can run.
-# Phase 1 scope is BF16 and FP8 (FP8 KV cache is a separate setting, kv_cache_dtype).
+# Keyed by gfx target.
+# Phase 1 scope is BF16 and FP8 
 # MI300X has no native FP4, so mxfp4 is only listed for gfx950 (Phase 2).
-# FP8 on gfx942 is expected to be the FNUZ variant. Confirm on the pinned stack.
+
 gfx942:
   name: AMD Instinct MI300X
   hbm_gb: 192
