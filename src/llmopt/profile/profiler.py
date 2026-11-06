@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from llmopt.engines.base import EngineAdapter, GenRequest, GenResult
 from llmopt.profile.memory import PeakMemoryMonitor, process_tree_memory_bytes
+from llmopt.profile.power import PowerSampler, energy_per_token_j
 from llmopt.schemas import Metrics
 
 
@@ -144,6 +145,7 @@ def profile_engine(
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
     concurrency: int = 1,
     clock: Callable[[], float] = time.perf_counter,
+    read_power_watts: Callable[[], float] | None = None,
 ) -> ProfileResult:
     if runs < 2:
         raise ValueError("runs must be at least 2 to measure stability")
@@ -156,9 +158,21 @@ def profile_engine(
     for _ in range(runs):
         results, wall_ms = _generate_pass(engine, requests, concurrency, clock)
         run_list.append(run_metrics(results, wall_ms))
-    with PeakMemoryMonitor(read_memory_bytes) as monitor:
-        _generate_pass(engine, requests, concurrency, clock)
+    energy: float | None = None
+    if read_power_watts is None:
+        with PeakMemoryMonitor(read_memory_bytes) as monitor:
+            _generate_pass(engine, requests, concurrency, clock)
+    else:
+        with (
+            PowerSampler(read_power_watts) as sampler,
+            PeakMemoryMonitor(read_memory_bytes) as monitor,
+        ):
+            results, _ = _generate_pass(engine, requests, concurrency, clock)
+        tokens = sum(len(result.token_times_ms) for result in results)
+        energy = energy_per_token_j(sampler.energy_joules, tokens)
     metrics = aggregate_runs(run_list, monitor.peak_bytes)
+    if energy is not None:
+        metrics = metrics.model_copy(update={"energy_per_token_j": energy})
     method = (
         "process-tree PSS (RSS fallback)"
         if read_memory_bytes is process_tree_memory_bytes

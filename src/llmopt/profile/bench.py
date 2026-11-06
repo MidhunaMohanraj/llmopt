@@ -30,6 +30,7 @@ def run_bench(
     spread_limit_pct: float = 5.0,
     read_memory_bytes: Callable[[], int] = process_tree_memory_bytes,
     clock: Callable[[], float] = time.perf_counter,
+    read_power_watts: Callable[[], float] | None = None,
 ) -> TrialResult:
     check_concurrency(engine, workload.concurrency, workload.num_requests)
     if runs < 2:
@@ -46,6 +47,7 @@ def run_bench(
             read_memory_bytes=read_memory_bytes,
             concurrency=workload.concurrency,
             clock=clock,
+            read_power_watts=read_power_watts,
         )
     except Exception as error:  # noqa: BLE001
         trial = TrialResult(
