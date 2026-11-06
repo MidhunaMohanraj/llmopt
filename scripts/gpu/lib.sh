@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 if [ "${DRY_RUN:-0}" = "1" ]; then
   OUT="${OUT:-/tmp/llmopt-dry}"
 else
