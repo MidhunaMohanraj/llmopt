@@ -235,6 +235,46 @@ def _score(
     return result.perplexity
 
 
+def _score_engine(
+    engine: str,
+    model: Path,
+    datasets: Path,
+    limit: int | None,
+    precision: str,
+    kv_cache_dtype: str,
+    settings: str,
+) -> float:
+    if not model.is_dir():
+        raise FileNotFoundError(f"model folder not found: {model}")
+
+    from transformers import AutoTokenizer
+
+    from llmopt.engines.vllm_cpu import VllmCpuEngine
+    from llmopt.validate.perplexity import (
+        evaluate_perplexity_engine,
+        load_wikitext_texts,
+    )
+
+    config = make_config(
+        engine, model, parse_settings(settings), precision, kv_cache_dtype
+    )
+    adapter = make_engine(engine)
+    if not isinstance(adapter, VllmCpuEngine):
+        raise TypeError(f"engine {engine!r} cannot return log-probabilities")
+    texts = load_wikitext_texts(
+        datasets / "wikitext" / "wikitext-2-raw-v1" / "test-00000-of-00001.parquet"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(str(model))
+    adapter.prepare(config)
+    try:
+        result = evaluate_perplexity_engine(
+            adapter.prompt_logprobs, tokenizer, texts, max_windows=limit or 20
+        )
+    finally:
+        adapter.teardown()
+    return result.perplexity
+
+
 def _compare(task_name: str, score: float, baseline_score: float) -> AccuracyResult:
     if task_name == TASKS["ppl"]:
         from llmopt.validate.perplexity import perplexity_accuracy
@@ -267,6 +307,21 @@ def validate_cmd(
     trial: Annotated[
         Path | None, typer.Option("--trial", help="Trial JSON to attach the result to.")
     ] = None,
+    engine: Annotated[
+        str | None,
+        typer.Option(
+            "--engine", help="vllm or vllm-rocm: score through the engine (ppl only)."
+        ),
+    ] = None,
+    precision: Annotated[
+        str, typer.Option("--precision", help="With --engine: bf16 or fp8.")
+    ] = "bf16",
+    kv_cache_dtype: Annotated[
+        str, typer.Option("--kv-cache-dtype", help="With --engine: auto or fp8.")
+    ] = "auto",
+    settings: Annotated[
+        str, typer.Option("--settings", help="With --engine: settings like a=1,b=true.")
+    ] = "",
 ) -> None:
     """Score a model and compare it with a baseline, or save a new baseline."""
     saved: Baseline | None = None
@@ -279,9 +334,22 @@ def validate_cmd(
         if write_baseline_to is not None and limit is not None:
             raise ValueError("a limited score is not a real baseline; drop --limit")
         task_name = TASKS[task]
+        engine_label = engine or "transformers"
+        if engine is None:
+            if precision != "bf16" or kv_cache_dtype != "auto" or settings:
+                raise ValueError(
+                    "--precision, --kv-cache-dtype and --settings need --engine"
+                )
+        else:
+            if engine not in ("vllm", "vllm-rocm"):
+                raise ValueError(f"engine must be vllm or vllm-rocm, got {engine!r}")
+            if task != "ppl":
+                raise ValueError("--engine only supports --task ppl")
+            if device != "cpu":
+                raise ValueError("--device does not apply with --engine")
         if baseline is not None:
             saved = read_baseline(baseline)
-            check_baseline(saved, task_name, limit)
+            check_baseline(saved, task_name, limit, engine_label)
         if trial is not None:
             trial_data = load_trial(trial)
         if limit is not None:
@@ -290,7 +358,18 @@ def validate_cmd(
                 err=True,
             )
         check_device(device)
-        score = _score(task, model, datasets.expanduser(), limit, device)
+        if engine is None:
+            score = _score(task, model, datasets.expanduser(), limit, device)
+        else:
+            score = _score_engine(
+                engine,
+                model,
+                datasets.expanduser(),
+                limit,
+                precision,
+                kv_cache_dtype,
+                settings,
+            )
     except (ValueError, OSError, RuntimeError) as error:
         typer.echo(f"error: {error}", err=True)
         raise typer.Exit(code=1) from error
@@ -298,7 +377,13 @@ def validate_cmd(
     typer.echo(f"{task_name}: score {score:.4f}")
     if write_baseline_to is not None:
         write_baseline(
-            Baseline(task=task_name, score=score, model=str(model), limit=limit),
+            Baseline(
+                task=task_name,
+                score=score,
+                model=str(model),
+                limit=limit,
+                engine=engine_label,
+            ),
             write_baseline_to,
         )
         typer.echo(f"Baseline saved to {write_baseline_to}")

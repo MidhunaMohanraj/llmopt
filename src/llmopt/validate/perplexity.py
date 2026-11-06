@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import math
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,43 @@ def evaluate_perplexity(
             )
             total_nll += float(loss.item())
             scored += window_tokens - 1
+    return PerplexityResult(
+        perplexity=perplexity_from_nll(total_nll, scored),
+        tokens_scored=scored,
+        windows=windows,
+        window_tokens=window_tokens,
+    )
+
+
+def evaluate_perplexity_engine(
+    prompt_logprobs: Callable[[list[int]], list[float]],
+    tokenizer: Any,
+    texts: list[str],
+    window_tokens: int = 512,
+    max_windows: int = 20,
+) -> PerplexityResult:
+    if window_tokens < 2:
+        raise ValueError(f"window_tokens must be at least 2, got {window_tokens}")
+    if max_windows < 1:
+        raise ValueError(f"max_windows must be at least 1, got {max_windows}")
+    text = "\n\n".join(texts)[: window_tokens * max_windows * 8]
+    ids: list[int] = tokenizer.encode(text, add_special_tokens=False)
+    windows = min(max_windows, len(ids) // window_tokens)
+    if windows < 1:
+        raise ValueError(
+            f"text gave {len(ids)} tokens, fewer than one window of {window_tokens}"
+        )
+    total_nll = 0.0
+    scored = 0
+    for index in range(windows):
+        chunk = ids[index * window_tokens : (index + 1) * window_tokens]
+        logprobs = prompt_logprobs(chunk)
+        if len(logprobs) != window_tokens - 1:
+            raise ValueError(
+                f"expected {window_tokens - 1} log-probabilities, got {len(logprobs)}"
+            )
+        total_nll -= sum(logprobs)
+        scored += window_tokens - 1
     return PerplexityResult(
         perplexity=perplexity_from_nll(total_nll, scored),
         tokens_scored=scored,

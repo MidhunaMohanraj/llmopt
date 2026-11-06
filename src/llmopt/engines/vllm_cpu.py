@@ -194,6 +194,29 @@ class VllmCpuEngine(EngineAdapter):
             )
         return run_batch(self._llm.llm_engine, items)
 
+    def _make_logprob_params(self) -> Any:
+        from vllm import SamplingParams
+
+        return SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=0)
+
+    def prompt_logprobs(self, token_ids: list[int]) -> list[float]:
+        if self._llm is None:
+            raise RuntimeError("call prepare() before prompt_logprobs()")
+        if len(token_ids) + 1 > self._max_model_len:
+            raise ValueError(
+                f"prompt needs {len(token_ids) + 1} tokens "
+                f"but max_model_len is {self._max_model_len}"
+            )
+        out = self._llm.generate(
+            [{"prompt_token_ids": token_ids}], self._make_logprob_params()
+        )[0]
+        entries = out.prompt_logprobs
+        if entries is None or len(entries) != len(token_ids):
+            raise RuntimeError(
+                "vLLM did not return a log-probability for every prompt token"
+            )
+        return [entries[i][token_ids[i]].logprob for i in range(1, len(token_ids))]
+
     def teardown(self) -> None:
         llm, self._llm = self._llm, None
         self._tokenizer = None
