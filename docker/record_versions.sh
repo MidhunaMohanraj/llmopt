@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Print the version of every component, so reports can record them.
-# Missing tools are reported as "not found", never skipped silently.
+
 set -u
 echo "date: $(date -Iseconds)"
 echo "image_python: $(python3 --version 2>&1)"
