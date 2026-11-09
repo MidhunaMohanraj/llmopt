@@ -23,8 +23,9 @@ if [ "${GPU_VM:-}" != "yes" ]; then
 fi
 BASE_IMAGE="${BASE_IMAGE:?set BASE_IMAGE to the pinned base image (tag or digest)}"
 MODELS_DIR="${MODELS_DIR:-$HOME/models}"
+DATASETS_DIR="${DATASETS_DIR:-$HOME/datasets}"
 OUT="${OUT:-$HOME/llmopt-sessions/session$N-$(date +%Y%m%d-%H%M%S)}"
-mkdir -p "$OUT" "$MODELS_DIR"
+mkdir -p "$OUT" "$MODELS_DIR" "$DATASETS_DIR"
 RESULTS="$OUT/results.txt"
 : > "$RESULTS"
 IMAGE="llmopt:session$N"
@@ -53,7 +54,7 @@ main() {
   docker run --rm \
     --group-add=video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
     --device /dev/kfd --device /dev/dri --ipc=host --network=host \
-    -v "$PWD":/work:ro -v "$MODELS_DIR":/models:ro -v "$OUT":/out \
+    -v "$PWD":/work:ro -v "$MODELS_DIR":/models:ro -v "$DATASETS_DIR":/datasets:ro -v "$OUT":/out \
     "$IMAGE" bash "/work/$INSIDE"
   rc=$?
   if [ "$rc" = 0 ]; then result container OK; else result container "FAILED (exit $rc)"; fi
