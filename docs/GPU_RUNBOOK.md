@@ -73,4 +73,25 @@ Every `RESULT` line ends in OK, except `parse-real-output`, which may fail. A fa
 ROCm adapters, power sampler, GPU parsers, `vllm serve` on ROCm, environment variables taking
 effect in vLLM's engine process, and teardown freeing GPU memory between trials.
 
-Sessions 2 to 4 have no scripts yet.
+## Sessions 2 to 4 (drafts, never run on a GPU)
+
+Run these on the VM after session 1 has passed. The launcher takes the session number:
+`GPU_VM=yes BASE_IMAGE=vllm/vllm-openai-rocm@sha256:14f6a575e1fb0a580b0f633c09e06f648709d60405b85f6a7ff3f80d49f39905 ./scripts/gpu/session.sh 2`
+
+To see what a session would do without running anything (safe on the bench PC):
+`./scripts/gpu/session.sh 3 --dry-run`
+
+| Session | What it runs | Needs on the VM |
+|---|---|---|
+| 2 | BF16 on vllm-rocm and pytorch-rocm, workloads smoke and chat | Qwen3-8B |
+| 3 | BF16 baseline, then FP8, FP8 KV cache and both, workload chat, on vllm-rocm. Optional: AMD's FP8-KV Llama model and the BF16 Llama reference | Qwen3-8B. Optional Llama folders (8.5 GB and 30 GB) |
+| 4 | Perplexity through vllm-rocm (BF16 baseline, then FP8, FP8 KV cache, both), energy with `--power`, three repeats of one BF16 run | Qwen3-8B and the WikiText-2 files in the datasets folder |
+
+Notes:
+- Session 3 skips the optional models if their folders are missing. The BF16 Llama reference is 30 GB, so leave it off the VM unless it is really needed.
+- Session 4 reads `$HOME/datasets` on the VM (variable `DATASETS_DIR`), mounted at `/datasets`. Copy the `wikitext/` folder there before the session. ARC is not run: the image has no lm_eval and `validate --engine` does perplexity only.
+- A baseline written through vllm-rocm only compares with vllm-rocm runs, and neither side may use `--limit`.
+- The accuracy drop is read from the logs in the output folder. Nothing in the script enforces a limit.
+- A failed BF16 baseline stops the session. FP8 steps may fail, and the script carries on. A leftover vLLM process stops the session.
+- Copy the whole output folder off the VM and destroy the VM, as in session 1.
+- Unproven: FP8 and FP8 KV cache settings on ROCm, `bench --power`, and `validate --engine vllm-rocm`. Expect fixes after the first run.
