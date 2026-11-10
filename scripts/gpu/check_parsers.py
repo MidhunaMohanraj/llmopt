@@ -1,4 +1,3 @@
-"""Run the real parsers on the real tool output saved by GPU session 1."""
 
 import sys
 from pathlib import Path
