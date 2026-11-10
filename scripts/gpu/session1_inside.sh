@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs INSIDE the container (called by session1.sh). Exit code 0 only if every step passed.
+
 set -uo pipefail
 OUT=/out
 MODEL=/models/Qwen__Qwen3-8B
