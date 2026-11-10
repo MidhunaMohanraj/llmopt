@@ -1,8 +1,3 @@
-"""Write the run file used by scripts/bench_all.sh: workload, objective, hardware, versions.
-
-The GPU fields of HardwareProfile are placeholders, because the bench PC has no GPU.
-"""
-
 import argparse
 import importlib.metadata as md
 import platform
