@@ -18,9 +18,8 @@ COPY docker/record_versions.sh /usr/local/bin/record_versions.sh
 RUN chmod +x /usr/local/bin/record_versions.sh \
  && (record_versions.sh > /opt/llmopt/versions_at_build.txt 2>&1 || true)
 
-# The package looks for configs/ next to the repo, which does not exist in the image.
+
 COPY configs /opt/llmopt/configs
 ENV LLMOPT_CONFIG_DIR=/opt/llmopt/configs
 
-# The base image may start a server by default; reset it for session use.
 ENTRYPOINT []
