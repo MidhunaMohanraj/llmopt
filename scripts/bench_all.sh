@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-# One command for the Phase 1 bench flow: bench both engines, score accuracy, build the report.
-#   scripts/bench_all.sh                 quick run, perplexity only
-#   WITH_ARC=1 scripts/bench_all.sh      also ARC-Easy (about 8 minutes per pass on the bench CPU)
-# Settings can be changed with environment variables: MODEL, OUT, DATASETS,
-# PROMPT_TOKENS, OUTPUT_TOKENS, NUM_REQUESTS, RUNS.
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
