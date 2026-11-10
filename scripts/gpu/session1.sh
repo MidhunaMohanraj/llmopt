@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# GPU session 1 (Week 2 Day 1). Run ONLY on the MI300X machine.
-#   GPU_VM=yes BASE_IMAGE=vllm/vllm-openai-rocm@sha256:<digest> ./scripts/gpu/session1.sh
-# Set HF_TOKEN in your shell first only if the model needs it.
-# Never write the token into this file or into any file.
+
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
